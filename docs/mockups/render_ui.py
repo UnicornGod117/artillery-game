@@ -222,9 +222,9 @@ def render(kind, data, issues, callouts, outfile):
     brg=math.radians(data["tbrg"]); tr=data["trange"]
     tp=(gun[0]+tr*math.sin(brg)*ppm, gun[1]-tr*math.cos(brg)*ppm)
     # aim line (dashed)
-    ab=math.radians(data["aim"]); aend=(gun[0]+tr*1.15*math.sin(ab)*ppm, gun[1]-tr*1.15*math.cos(ab)*ppm)
-    dash_line(d,gun,aend,hx(p["Accent"]),1)
-    text(d,p,(aend[0]+4,aend[1]),f"BRG {data['aim']:.1f}°","Accent",8)
+    ab=math.radians(data["aim"]); adir=(math.sin(ab),-math.cos(ab)); aend=(gun[0]+adir[0]*58, gun[1]+adir[1]*58)
+    dash_line(d,gun,aend,hx(p["Accent"]),1,6,4)
+    text(d,p,(aend[0]-12,aend[1]-14),f"BRG {data['aim']:.1f}°","Accent",8)
     # target mark
     d.rectangle([tp[0]-6,tp[1]-6,tp[0]+6,tp[1]+6],outline=hx(p["Red"]),width=2)
     d.line([tp[0]-11,tp[1],tp[0]+11,tp[1]],fill=hx(p["Red"]),width=1)

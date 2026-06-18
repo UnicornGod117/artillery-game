@@ -103,13 +103,18 @@ public partial class PlottingBoard : Control
         DrawString(font, gunC + new Vector2(-18, 22), IsBeam ? "EMITTER" : "GUN FCS-01",
             HorizontalAlignment.Left, -1, 8, P.AccentDim);
 
-        // Azimuth line-of-bearing — a straight ray showing only the bearing you dialled
-        // in, so you can line it up against the target's measured position. It echoes
-        // your input; it is NOT a predicted ground track (the program never forecasts a
-        // round's path — design pillar 2). The real path appears only after you fire.
-        Vector2 aimEnd = World(TargetRange * 1.15, AimAzimuth);
-        DrawDashed(gunC, aimEnd, P.Accent, 1.4f, 7, 5);
-        DrawString(font, aimEnd + new Vector2(4, 0), $"BRG {AimAzimuth:0.0}°",
+        // Heading tick — a SHORT, fixed-length stub showing only the bearing you dialled
+        // in (a compass direction out of the gun). It is deliberately far too short to
+        // reach the target, so it can never reveal alignment or whether a shot would land
+        // — it echoes your input, never a prediction (design pillar 2). The real path
+        // appears only after you fire. Lay the gun by reading the numeric BRG against the
+        // target's measured bearing, not by eyeballing a line into the target.
+        const float headingPx = 58f;
+        float abr = Mathf.DegToRad((float)AimAzimuth);
+        Vector2 aimDir = new(Mathf.Sin(abr), -Mathf.Cos(abr));
+        Vector2 aimEnd = gunC + aimDir * headingPx;
+        DrawDashed(gunC, aimEnd, P.Accent, 1.4f, 6, 4);
+        DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.0}°",
             HorizontalAlignment.Left, -1, 8, P.Accent);
 
         // Observed target marker.
