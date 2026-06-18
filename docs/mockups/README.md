@@ -32,3 +32,14 @@ session**: the working scientific calculator, the handbook overlay + tier-aware
 HELP, the **NEW MISSION** flow, the persisted career score, stated input
 precision, and — on the beam station — environment readouts driven by the real
 mission plus an honestly-labelled relativistic-regime panel.
+
+**Measurement tools** (design §4): the plotting-board toolbar adds a cartesian
+**GRID**, a **RULER** (distance + bearing between two points — see the live
+`5.55 km · 58.6°` readout), a **PROTRACTOR** (angle at a vertex), and a **PEN** for
+freehand construction lines, so the player can work distances out by hand. These
+yield measurements only — never the firing solution.
+
+**Vertical-plane altitude:** the view now plots target altitude relative to the gun
+with a dashed **gun-level (0 m)** line, so a target *above* the gun (beam: +7.4 km)
+sits above it and a target *below* the gun (kinetic: −98 m) sits below it — no longer
+clamped to the baseline.
