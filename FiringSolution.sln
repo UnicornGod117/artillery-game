@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiringSolution.Core", "src\FiringSolution.Core\FiringSolution.Core.csproj", "{0A473D45-A794-4905-879C-6583561815FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiringSolution.Core.Tests", "tests\FiringSolution.Core.Tests\FiringSolution.Core.Tests.csproj", "{EF897686-3711-4C52-B214-A854F79DB554}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A473D45-A794-4905-879C-6583561815FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A473D45-A794-4905-879C-6583561815FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A473D45-A794-4905-879C-6583561815FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A473D45-A794-4905-879C-6583561815FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF897686-3711-4C52-B214-A854F79DB554}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF897686-3711-4C52-B214-A854F79DB554}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF897686-3711-4C52-B214-A854F79DB554}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF897686-3711-4C52-B214-A854F79DB554}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
