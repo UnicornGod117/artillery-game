@@ -70,9 +70,53 @@ dotnet build
 dotnet test
 ```
 
-## Shell
+## Shell — Godot 4 + C#
 
-The instrument-panel + simulation/observation UI (the two stations from the
-visual study) consumes `GameEngine` only. Shell technology (Godot 4 + C# vs
-Avalonia + SkiaSharp) is the open decision from design §14 — see the project
-status notes.
+The recommended shell (design §13). The instrument panels and the simulation /
+observation views (the two stations from the visual study — amber kinetic and
+ice-blue beam) are built **programmatically in C#** so everything stays in C#
+and the physics Core is consumed only through `GameEngine`.
+
+```
+shell/godot/
+├── project.godot                 # Godot 4 project (main scene = Main.tscn)
+├── FiringSolution.Shell.csproj   # Godot.NET.Sdk; references the Core
+├── Main.tscn                     # minimal scene: a Control running Main.cs
+├── icon.svg
+└── scripts/
+    ├── Main.cs                   # entry; switch kinetic ↔ beam (Tab / button)
+    ├── StationView.cs            # shared chrome: top bar + 3-column layout
+    ├── KineticStation.cs         # Direction A — amber gunnery
+    ├── BeamStation.cs            # Direction B — ice-blue relativistic beam
+    ├── PlottingBoard.cs          # tactical board: pan/zoom, rings, aim, impact
+    ├── VerticalPlane.cs          # range/altitude view (real simulated arc)
+    ├── Compass.cs                # wind dial
+    └── Ui.cs                     # palette + styled-control factory helpers
+```
+
+### Run
+
+1. Install [Godot 4.3 **.NET/Mono** edition](https://godotengine.org/download)
+   and the .NET 8 SDK.
+2. Open `shell/godot/project.godot` in the Godot editor (it will build the C#
+   solution, restoring the Core reference).
+3. Press **Play**. **Commit & Fire** simulates exactly the azimuth / elevation /
+   charge you entered; the impact is stamped on the board, and a miss reports
+   range/line corrections. **Tab** switches between the two stations.
+
+> The `Godot.NET.Sdk` version in `FiringSolution.Shell.csproj` (4.3.0) should
+> match your installed Godot version.
+
+## Build status / verification
+
+The container this was authored in has a network allowlist that blocks the .NET
+SDK installer and the apt/NuGet feeds, so the C# could **not** be compiled or
+test-run here yet. The Core is written to compile cleanly under .NET 8; once a
+machine with the SDK (and NuGet access) is available:
+
+```bash
+dotnet test            # runs the Core unit tests
+```
+
+The Godot shell additionally requires the Godot 4 editor to build/run (it cannot
+run headless in CI without an export template + display).
