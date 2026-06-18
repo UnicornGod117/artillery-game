@@ -76,9 +76,9 @@ public partial class KineticStation : StationView
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SPOTTER"));
         v.AddChild(MetricGrid(new[]
         {
-            ("GROUND RANGE", $"{o.Range / 1000:0.00} km"),
-            ("BEARING", $"{o.Bearing:0.0} °"),
-            ("TGT ALTITUDE", $"{o.Altitude:+0;-0;0} m"),
+            ("GROUND RANGE · 0.01 km", $"{o.Range / 1000:0.00} km"),
+            ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
+            ("TGT ALTITUDE · 1 m", $"{o.Altitude:+0;-0;0} m"),
             ("MOTION", "STATIC"),
         }, new Color("e9ddc6")));
         v.AddChild(Ui.Text("↳ Localised from OP-1 / OP-2. Range & drop are yours to solve.", P.Faint, 9));
@@ -111,19 +111,21 @@ public partial class KineticStation : StationView
 
         v.AddChild(Ui.SectionHeader(P, "Firing Solution — Your Input", P.Accent));
         v.AddChild(Ui.Text("↳ type, or use the steppers. Nothing here is computed for you.", P.Faint, 9));
+        v.AddChild(Ui.Text("↳ required precision: azimuth & elevation to 0.1°, charge is an integer 1–7.", P.AccentDim, 9));
+        v.AddChild(Ui.Text("   near a charge's max range the arc is steep — type elevation for full 0.1° control.", P.Faint, 8));
 
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 11);
         grid.AddThemeConstantOverride("v_separation", 11);
         v.AddChild(grid);
 
-        _azField = AddNumberField(grid, "AZIMUTH (x) · °", _az.ToString("0.0"), 1.0,
+        _azField = AddNumberField(grid, "AZIMUTH (x) · ° · ±0.1°", _az.ToString("0.0"), 0.1,
             d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
-        _elField = AddNumberField(grid, "ELEVATION (y) · °", _el.ToString("0.0"), 0.5,
+        _elField = AddNumberField(grid, "ELEVATION (y) · ° · ±0.1°", _el.ToString("0.0"), 0.1,
             d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
-        _zcField = AddNumberField(grid, "Z-CORR (cross) · °", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
+        _zcField = AddNumberField(grid, "Z-CORR (cross) · ° · ±0.1°", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
             d => { _zc = d; });
-        _chargeField = AddNumberField(grid, "PROPELLANT CHARGE", _charge.ToString(), 1.0,
+        _chargeField = AddNumberField(grid, "PROPELLANT CHARGE · 1–7", _charge.ToString(), 1.0,
             d => { _charge = (int)Math.Round(d); UpdatePips(); RefreshV0(); },
             isInt: true,
             clamp: d => Math.Clamp(Math.Round(d), 1, _mission.KineticWeapon!.MaxCharge));
@@ -266,24 +268,18 @@ public partial class KineticStation : StationView
     private void RevealSolution()
     {
         // Give up: brute-force the engine to surface a working solution (graceful exit).
-        for (int c = 1; c <= _mission.KineticWeapon!.MaxCharge; c++)
-            for (double el = 5; el <= 85; el += 0.25)
-            {
-                var r = GameEngine.FireKinetic(_mission, _mission.KineticTarget!.Bearing, el, c);
-                if (r.Score.Hit)
+        var sol = GameEngine.RevealKineticSolution(_mission);
+        if (sol is { } s)
+            SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
+                new[]
                 {
-                    SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
-                        new[]
-                        {
-                            ("AZIMUTH", $"{_mission.KineticTarget!.Bearing:0.0}°", P.Text),
-                            ("ELEVATION", $"{el:0.0}°", P.Text),
-                            ("CHARGE", c.ToString(), P.Text),
-                        },
-                        "one valid firing solution shown.");
-                    return;
-                }
-            }
-        SetLastShot("GIVE UP", P.Red, Array.Empty<(string, string, Color)>(), "no closed solution found.");
+                    ("AZIMUTH", $"{s.Azimuth:0.0}°", P.Text),
+                    ("ELEVATION", $"{s.Elevation:0.0}°", P.Text),
+                    ("CHARGE", s.Charge.ToString(), P.Text),
+                },
+                "one valid firing solution shown.");
+        else
+            SetLastShot("GIVE UP", P.Red, Array.Empty<(string, string, Color)>(), "no closed solution found.");
     }
 
 }

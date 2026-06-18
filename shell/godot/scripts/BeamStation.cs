@@ -70,10 +70,10 @@ public partial class BeamStation : StationView
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SENSOR"));
         v.AddChild(MetricGrid(new[]
         {
-            ("SLANT RANGE", $"{o.SlantRange / 1000:0.0} km"),
-            ("BEARING", $"{o.Bearing:0.0} °"),
-            ("LOS ELEVATION", $"{o.LosElevation:0.0} °"),
-            ("CLOSING", $"{o.Closing:0} m/s"),
+            ("SLANT RANGE · 0.1 km", $"{o.SlantRange / 1000:0.0} km"),
+            ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
+            ("LOS ELEVATION · 0.1°", $"{o.LosElevation:0.0} °"),
+            ("CLOSING · 1 m/s", $"{o.Closing:0} m/s"),
         }, P.Text));
         v.AddChild(Ui.Text("↳ Near-c flight makes lead negligible — the work is energy & γ.", P.Faint, 9));
 
@@ -103,19 +103,20 @@ public partial class BeamStation : StationView
 
         v.AddChild(Ui.SectionHeader(P, "Firing Solution — Your Input", P.Accent));
         v.AddChild(Ui.Text("↳ point the emitter & set pulse energy. The board never solves it.", P.Faint, 9));
+        v.AddChild(Ui.Text("↳ required precision: pointing within the on-axis tolerance; deliver E ≥ the shown kill threshold (0.1 GJ).", P.AccentDim, 9));
 
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 11);
         grid.AddThemeConstantOverride("v_separation", 11);
         v.AddChild(grid);
 
-        AddNumberField(grid, "AZIMUTH (x) · °", _az.ToString("0.0"), 1.0,
+        AddNumberField(grid, "AZIMUTH (x) · ° · ±0.1°", _az.ToString("0.0"), 0.1,
             d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
-        AddNumberField(grid, "ELEVATION (y) · °", _el.ToString("0.0"), 0.5,
+        AddNumberField(grid, "ELEVATION (y) · ° · ±0.1°", _el.ToString("0.0"), 0.1,
             d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
-        AddNumberField(grid, "Z-CORR (cross) · °", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
+        AddNumberField(grid, "Z-CORR (cross) · ° · ±0.1°", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
             d => { _zc = d; });
-        AddNumberField(grid, "PULSE ENERGY · GJ", _en.ToString("0.0"), 0.5,
+        AddNumberField(grid, "PULSE ENERGY · GJ · ±0.1", _en.ToString("0.0"), 0.5,
             d => { _en = d; RefreshRegime(); },
             clamp: d => Math.Max(0, d));
 
