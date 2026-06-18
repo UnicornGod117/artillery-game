@@ -154,8 +154,11 @@ public partial class KineticStation : StationView
         fire.Pressed += Fire;
         v.AddChild(fire);
 
-        // Calculator (arithmetic only — honour-system boundary, design §4).
-        v.AddChild(Calculator.Build(P));
+        // Calculator (arithmetic only — opens a pop-up keypad, design §4).
+        var calcBtn = Ui.FlatButton(P, "▦  SCIENTIFIC CALCULATOR · keypad", P.Accent, P.Border, 10);
+        calcBtn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        calcBtn.Pressed += () => CalculatorView.Open(this, P);
+        v.AddChild(calcBtn);
 
         // Handbook (opens the Core's formula reference) + Help / Give up.
         var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Ballistics / Trig / Relativity", P.Accent, P.Border, 10);

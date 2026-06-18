@@ -37,6 +37,12 @@ yield *measurements*, never *solutions* — the player derives azimuth /
 elevation / charge by hand and commits; the engine obeys the physics and stamps
 the real impact. A miss is calibration data, not failure.
 
+**No predicted paths (design pillar 2).** The program never forecasts where a round
+will go. The plotting-board aim line is a bearing pointer (`BRG`) and the vertical
+view's barrel stub is a lay angle (`LAY`) — both only echo your inputs. A trajectory
+is drawn *only after* you commit, and it is the real one the oracle integrated. The
+calculator is arithmetic-only and holds no physics, so it cannot predict either.
+
 ### Public API (what the shell calls)
 
 ```csharp
@@ -143,9 +149,10 @@ the shell is intentionally kept out of `FiringSolution.sln` — that keeps root
 
 The fire→score→observe loop is wired, and these instruments are now functional:
 
-- **Scientific calculator** — a real recursive-descent evaluator (`Calculator.cs`):
-  `+ − × ÷ ^ ( )`, `sin/cos/tan/asin/acos/atan/sqrt/ln/log/exp/abs`, `pi`/`e`,
-  scientific notation, with degree-mode trig to match the game's angle convention.
+- **Scientific calculator** — a pop-up **button keypad** (`CalculatorView.cs`, you can
+  also type into the display) over a real recursive-descent evaluator (`Calculator.cs`):
+  digits, `+ − × ÷ ^ ( )`, `sin/cos/tan/asin/acos/atan/sqrt/ln/log/exp`, `pi`/`e`, `Ans`,
+  history, and degree-mode trig to match the game's angle convention.
 - **Handbook** (`HandbookView.cs`) — an overlay rendering the Core's formula
   reference, with the tier-aware `Handbook.HelpHint` banner; **HELP** uses the same.
 - **NEW MISSION** — regenerates a fresh procedural mission in place.

@@ -103,10 +103,13 @@ public partial class PlottingBoard : Control
         DrawString(font, gunC + new Vector2(-18, 22), IsBeam ? "EMITTER" : "GUN FCS-01",
             HorizontalAlignment.Left, -1, 8, P.AccentDim);
 
-        // Aim line (dashed) along current azimuth input.
+        // Azimuth line-of-bearing — a straight ray showing only the bearing you dialled
+        // in, so you can line it up against the target's measured position. It echoes
+        // your input; it is NOT a predicted ground track (the program never forecasts a
+        // round's path — design pillar 2). The real path appears only after you fire.
         Vector2 aimEnd = World(TargetRange * 1.15, AimAzimuth);
         DrawDashed(gunC, aimEnd, P.Accent, 1.4f, 7, 5);
-        DrawString(font, aimEnd + new Vector2(4, 0), $"AIM {AimAzimuth:0.0}°",
+        DrawString(font, aimEnd + new Vector2(4, 0), $"BRG {AimAzimuth:0.0}°",
             HorizontalAlignment.Left, -1, 8, P.Accent);
 
         // Observed target marker.

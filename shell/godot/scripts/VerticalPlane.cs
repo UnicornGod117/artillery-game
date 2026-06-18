@@ -57,12 +57,15 @@ public partial class VerticalPlane : Control
             new(left + (float)(rangeM / _maxRange) * plotW,
                 bottom - (float)(altM / _maxAlt) * plotH);
 
-        // Barrel / aim wedge.
+        // Barrel lay angle — a FIXED-LENGTH stub showing only the elevation you dialled
+        // in. This is your input echoed back, NOT a predicted arc: the program never
+        // forecasts where a round will go (design pillar 2). A trajectory is drawn only
+        // AFTER you commit, and it is the real one the oracle simulated (see below).
         float el = Mathf.DegToRad((float)AimElevation);
         Vector2 gun = new(left, bottom);
         Vector2 aimEnd = gun + new Vector2(Mathf.Cos(el), -Mathf.Sin(el)) * 120;
         DrawLine(gun, aimEnd, P.Accent, 2);
-        DrawString(font, gun + new Vector2(44, -12), $"{AimElevation:0.0}°",
+        DrawString(font, gun + new Vector2(44, -12), $"LAY {AimElevation:0.0}°",
             HorizontalAlignment.Left, -1, 9, P.Accent);
 
         // Target marker.
@@ -71,7 +74,9 @@ public partial class VerticalPlane : Control
         DrawString(font, tgt + new Vector2(-30, -9), $"TGT {TargetRange / 1000:0.0}km",
             HorizontalAlignment.Left, -1, 8, P.Red);
 
-        // Fired arc / ray.
+        // Fired arc / ray — the ONLY trajectory ever drawn, and only after firing.
+        // `Arc` is populated solely from the committed shot's real simulated points
+        // (KineticStation/BeamStation.Fire); there is no pre-fire prediction path.
         if (Arc is { Count: > 1 })
         {
             var pts = new Vector2[Arc.Count];
