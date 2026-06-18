@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Saira+Condensed:wght@400;500;600;700&family=Saira+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  input{font-family:'JetBrains Mono',monospace;}
+  @keyframes fs-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes fs-pulse{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+  @keyframes fs-reload{0%{width:8%}100%{width:73%}}
+  @keyframes fs-flow{to{stroke-dashoffset:-24}}
+</style>
+</helmet>
+
+<div style="min-width:100%;min-height:100vh;width:max-content;box-sizing:border-box;padding:52px 56px 80px;background:#e7e5df;font-family:'JetBrains Mono',monospace;">
+
+  <!-- ============ PAGE HEADER ============ -->
+  <div style="max-width:1440px;margin-bottom:38px;">
+    <div style="font-family:'Saira Semi Condensed',sans-serif;font-size:12px;letter-spacing:.34em;color:#8a8378;text-transform:uppercase;margin-bottom:10px;">Visual Direction Study · v0.3 · interactive</div>
+    <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:46px;letter-spacing:.02em;color:#1b1916;line-height:1;text-transform:uppercase;">Firing Solution</div>
+    <div style="margin-top:14px;max-width:820px;font-size:13px;line-height:1.7;color:#55504a;">The station shows you the <em style="color:#37332e;font-style:normal;">situation</em> — never the answer. Read the board, dial your own azimuth / elevation / charge into the live inputs, then <em style="color:#37332e;font-style:normal;">Commit &amp; Fire</em>: the engine simulates exactly what you entered and stamps the real impact on the board. A miss is calibration. Drag the map to pan, scroll to zoom.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:60px;">
+
+    <!-- ======================================================= -->
+    <!-- ===================  DIRECTION A  ====================== -->
+    <!-- ======================================================= -->
+    <div>
+      <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:14px;">
+        <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.18em;color:#1b1916;text-transform:uppercase;">Direction A — Gunnery</span>
+        <span style="font-size:11px;letter-spacing:.06em;color:#7b756c;">Amber-phosphor command · Kinetic artillery · interactive sim</span>
+      </div>
+
+      <div data-screen-label="Direction A — Kinetic station" style="position:relative;width:1440px;height:884px;background:#1c1812;display:grid;grid-template-columns:312px 1fr 372px;grid-template-rows:46px 1fr 214px;gap:1px;overflow:hidden;border:1px solid #2c2519;box-shadow:0 18px 50px rgba(0,0,0,.28);">
+
+        <div style="position:absolute;inset:0;pointer-events:none;z-index:30;background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.16) 3px);mix-blend-mode:multiply;opacity:.5;"></div>
+        <div style="position:absolute;inset:0;pointer-events:none;z-index:31;background:radial-gradient(120% 90% at 50% 0%,rgba(244,173,60,.05),transparent 55%);"></div>
+
+        <!-- ===== TOP BAR ===== -->
+        <div style="grid-column:1 / 4;background:#0d0b08;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid #2c2519;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="width:9px;height:9px;background:#f4ad3c;transform:rotate(45deg);box-shadow:0 0 8px rgba(244,173,60,.7);"></span>
+            <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.26em;color:#ece3d0;text-transform:uppercase;">Firing&nbsp;Solution</span>
+            <span style="font-size:10px;letter-spacing:.16em;color:#6b6151;border-left:1px solid #2c2519;padding-left:12px;">FCS-01 · STATION ALPHA</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;background:#211a0d;color:#f4ad3c;border:1px solid #4a3a18;">WPN&nbsp;·&nbsp;KINETIC ARTILLERY</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#9a8f78;border:1px solid #2c2519;">WORLD · EARTH</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#9a8f78;border:1px solid #2c2519;">TIER · MEDIUM I</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#9a8f78;border:1px solid #2c2519;">MSN&nbsp;4471-K</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:18px;">
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:8.5px;letter-spacing:.16em;color:#6b6151;">RELOAD CYCLE</span>
+              <div style="width:128px;height:5px;background:#241d12;border:1px solid #3a2f1a;position:relative;overflow:hidden;">
+                <div style="position:absolute;inset:0;width:73%;background:linear-gradient(90deg,#8a6a2a,#f4ad3c);animation:fs-reload 5s linear infinite alternate;"></div>
+              </div>
+            </div>
+            <span style="font-size:11px;letter-spacing:.1em;color:#9a8f78;">CAREER <span style="color:#ece3d0;">12,840</span> PTS</span>
+          </div>
+        </div>
+
+        <!-- ===== LEFT PANEL ===== -->
+        <div style="grid-row:2 / 4;background:#0e0c0a;padding:16px 16px 14px;display:flex;flex-direction:column;gap:18px;overflow:hidden;">
+
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#f4ad3c;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#9a8a66;text-transform:uppercase;">Environment</span><span style="flex:1;height:1px;background:#221d15;"></span><span style="font-size:8.5px;color:#5c5345;letter-spacing:.1em;">MEASURED</span></div>
+
+            <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;">
+              <svg width="78" height="78" viewBox="0 0 78 78">
+                <circle cx="39" cy="39" r="35" style="fill:none;stroke:#2a2317;stroke-width:1"/>
+                <circle cx="39" cy="39" r="26" style="fill:none;stroke:#1f1a10;stroke-width:1"/>
+                <line x1="39" y1="4" x2="39" y2="11" style="stroke:#6b6151;stroke-width:1"/>
+                <text x="39" y="9" style="fill:#8a7d63;font-size:7px;font-family:'JetBrains Mono',monospace;text-anchor:middle">N</text>
+                <g transform="rotate(295 39 39)">
+                  <line x1="39" y1="58" x2="39" y2="20" style="stroke:#f4ad3c;stroke-width:2"/>
+                  <path d="M39 16 L34 26 L39 23 L44 26 Z" style="fill:#f4ad3c"/>
+                </g>
+                <circle cx="39" cy="39" r="2.5" style="fill:#0e0c0a;stroke:#f4ad3c;stroke-width:1"/>
+              </svg>
+              <div style="flex:1;">
+                <div style="font-size:8.5px;letter-spacing:.14em;color:#6b6151;">WIND VECTOR</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:21px;color:#ece3d0;line-height:1.2;margin-top:2px;">12.4<span style="font-size:11px;color:#8a7d63;"> m/s</span></div>
+                <div style="font-size:11px;color:#b9892f;">FROM 295°</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#221d15;border:1px solid #221d15;">
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">ALTITUDE</div><div style="font-size:15px;color:#ece3d0;margin-top:3px;">1,240<span style="font-size:10px;color:#7b7058;"> m</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">AIR TEMP</div><div style="font-size:15px;color:#ece3d0;margin-top:3px;">+7.2<span style="font-size:10px;color:#7b7058;"> °C</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">AIR DENSITY ρ</div><div style="font-size:15px;color:#ece3d0;margin-top:3px;">1.094<span style="font-size:10px;color:#7b7058;"> kg/m³</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">LOCAL g</div><div style="font-size:15px;color:#ece3d0;margin-top:3px;">9.806<span style="font-size:10px;color:#7b7058;"> m/s²</span></div></div>
+            </div>
+          </div>
+
+          <!-- TARGET OBSERVED -->
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#e24a30;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#c08a72;text-transform:uppercase;">Target — Observed</span><span style="flex:1;height:1px;background:#221d15;"></span><span style="font-size:8.5px;color:#5c5345;letter-spacing:.1em;">SPOTTER</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#221d15;border:1px solid #221d15;">
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">GROUND RANGE</div><div style="font-size:15px;color:#e9ddc6;margin-top:3px;">8.60<span style="font-size:10px;color:#7b7058;"> km</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">BEARING</div><div style="font-size:15px;color:#e9ddc6;margin-top:3px;">041.7<span style="font-size:10px;color:#7b7058;"> °</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">TGT ALTITUDE</div><div style="font-size:15px;color:#e9ddc6;margin-top:3px;">+40<span style="font-size:10px;color:#7b7058;"> m</span></div></div>
+              <div style="background:#100d0a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#6b6151;">MOTION</div><div style="font-size:15px;color:#e9ddc6;margin-top:3px;">9.4<span style="font-size:10px;color:#7b7058;"> m/s 226°</span></div></div>
+            </div>
+            <div style="margin-top:7px;font-size:9px;color:#5c5345;line-height:1.5;">↳ Localised from OP-1 / OP-2 bearings. The range &amp; drop are <em style="color:#8a7d63;font-style:normal;">yours to solve</em>.</div>
+          </div>
+
+          <!-- WEAPON CONFIG -->
+          <div style="flex:1;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#f4ad3c;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#9a8a66;text-transform:uppercase;">Weapon Configuration</span><span style="flex:1;height:1px;background:#221d15;"></span></div>
+
+            <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#1a1409;border-left:2px solid #f4ad3c;"><span style="color:#f4ad3c;font-size:9px;">▸</span><span style="font-size:11px;color:#ece3d0;letter-spacing:.06em;">KINETIC ARTILLERY</span><span style="margin-left:auto;font-size:8px;color:#b9892f;letter-spacing:.1em;">ACTIVE</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#100d0a;border-left:2px solid #2c2519;"><span style="color:#4a4234;font-size:9px;">·</span><span style="font-size:11px;color:#7b7058;letter-spacing:.06em;">RELATIVISTIC BEAM</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#100d0a;border-left:2px solid #2c2519;"><span style="color:#4a4234;font-size:9px;">·</span><span style="font-size:11px;color:#7b7058;letter-spacing:.06em;">INTERCEPTOR · RAILGUN · MISSILE</span></div>
+            </div>
+
+            <div style="font-size:8.5px;letter-spacing:.14em;color:#6b6151;margin-bottom:6px;">MUNITION</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;background:#100d0a;border:1px solid #2c2519;margin-bottom:10px;">
+              <span style="font-size:12px;color:#ece3d0;">M-72 HE-FRAG</span><span style="font-size:9px;color:#6b6151;">▾</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#221d15;border:1px solid #221d15;">
+              <div style="background:#100d0a;padding:8px 10px;"><div style="font-size:8px;color:#6b6151;letter-spacing:.1em;">SHELL MASS</div><div style="font-size:13px;color:#cdbf9f;margin-top:2px;">43.2 kg</div></div>
+              <div style="background:#100d0a;padding:8px 10px;"><div style="font-size:8px;color:#6b6151;letter-spacing:.1em;">BALLISTIC COEF</div><div style="font-size:13px;color:#cdbf9f;margin-top:2px;">0.255</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CENTER — PLOTTING BOARD ===== -->
+        <div style="grid-row:2 / 3;background:#0a0907;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #1c1812;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#f4ad3c;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.24em;color:#cdbf9f;text-transform:uppercase;">Plotting Board</span><span style="font-size:9px;color:#5c5345;letter-spacing:.1em;margin-left:4px;">GRID 31U-EQ · SECTOR 7-K</span></div>
+            <div style="display:flex;gap:8px;font-size:9px;color:#6b6151;letter-spacing:.1em;"><span style="padding:3px 7px;border:1px solid #2c2519;color:#cdbf9f;">RULER</span><span style="padding:3px 7px;border:1px solid #2c2519;">PROTRACTOR</span><span style="padding:3px 7px;border:1px solid #2c2519;">COMPASS</span></div>
+          </div>
+
+          <div style="flex:1;position:relative;">
+            <svg width="100%" height="100%" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet" style="display:block;cursor:grab;" onMouseDown="{{ aDown }}" onMouseMove="{{ aMove }}" onMouseUp="{{ aUp }}" onMouseLeave="{{ aUp }}" onWheel="{{ aWheel }}">
+              <defs>
+                <pattern id="gridAfine" width="9.5" height="9.5" patternUnits="userSpaceOnUse">
+                  <path d="M9.5 0 H0 V9.5" style="fill:none;stroke:#100d08;stroke-width:.5"/>
+                </pattern>
+              </defs>
+              <rect x="0" y="0" width="720" height="520" style="fill:#0a0907"/>
+
+              <g transform="{{ aMapT }}">
+                <rect x="-400" y="-400" width="1520" height="1320" style="fill:url(#gridAfine)"/>
+
+                <!-- coordinate graticule -->
+                <g style="stroke:#1c1710;stroke-width:1">
+                  <line x1="64" y1="-200" x2="64" y2="720"/><line x1="140" y1="-200" x2="140" y2="720"/><line x1="216" y1="-200" x2="216" y2="720"/><line x1="292" y1="-200" x2="292" y2="720"/><line x1="368" y1="-200" x2="368" y2="720"/><line x1="444" y1="-200" x2="444" y2="720"/><line x1="520" y1="-200" x2="520" y2="720"/><line x1="596" y1="-200" x2="596" y2="720"/>
+                  <line x1="-200" y1="50" x2="900" y2="50"/><line x1="-200" y1="126" x2="900" y2="126"/><line x1="-200" y1="202" x2="900" y2="202"/><line x1="-200" y1="278" x2="900" y2="278"/><line x1="-200" y1="354" x2="900" y2="354"/><line x1="-200" y1="430" x2="900" y2="430"/><line x1="-200" y1="506" x2="900" y2="506"/>
+                </g>
+                <g style="fill:#5c5345;font-size:8px;font-family:'JetBrains Mono',monospace">
+                  <text x="66" y="514">042</text><text x="142" y="514">044</text><text x="218" y="514">046</text><text x="294" y="514">048</text><text x="370" y="514">050</text><text x="446" y="514">052</text><text x="522" y="514">054</text>
+                  <text x="4" y="48">325</text><text x="4" y="124">323</text><text x="4" y="200">321</text><text x="4" y="276">319</text><text x="4" y="352">317</text><text x="4" y="428">315</text>
+                </g>
+
+                <!-- terrain contours -->
+                <g style="fill:none;stroke:#241d12;stroke-width:1">
+                  <path d="M470 90 C540 110 560 180 500 220 C440 250 400 200 420 150 C432 120 450 96 470 90 Z"/>
+                  <path d="M478 118 C522 132 534 178 496 204 C456 224 432 190 446 156 C456 132 466 122 478 118 Z" style="stroke:#1f190f"/>
+                </g>
+                <text x="498" y="160" style="fill:#4a3f28;font-size:7px;font-family:'JetBrains Mono',monospace">·120·</text>
+
+                <!-- range rings centred on gun -->
+                <g style="fill:none;stroke:#241d12;stroke-width:1">
+                  <circle cx="140" cy="430" r="76"/><circle cx="140" cy="430" r="152"/><circle cx="140" cy="430" r="228"/><circle cx="140" cy="430" r="304"/><circle cx="140" cy="430" r="380"/>
+                </g>
+                <g style="fill:#5c5345;font-size:7.5px;font-family:'JetBrains Mono',monospace">
+                  <text x="220" y="427">2km</text><text x="296" y="427">4km</text><text x="372" y="427">6km</text><text x="448" y="427">8km</text>
+                </g>
+
+                <!-- spotter bearing lines -->
+                <line x1="232" y1="392" x2="640" y2="80" style="stroke:#3f5662;stroke-width:1;stroke-dasharray:5 4"/>
+                <line x1="470" y1="470" x2="430" y2="60" style="stroke:#3f5662;stroke-width:1;stroke-dasharray:5 4"/>
+                <rect x="227" y="387" width="10" height="10" style="fill:none;stroke:#7d97a3;stroke-width:1.3"/>
+                <text x="206" y="382" style="fill:#7d97a3;font-size:8px;font-family:'JetBrains Mono',monospace">OP-1</text>
+                <rect x="465" y="465" width="10" height="10" style="fill:none;stroke:#7d97a3;stroke-width:1.3"/>
+                <text x="468" y="492" style="fill:#7d97a3;font-size:8px;font-family:'JetBrains Mono',monospace">OP-2</text>
+
+                <!-- gun emplacement -->
+                <g>
+                  <line x1="125" y1="430" x2="155" y2="430" style="stroke:#3a2f1a;stroke-width:1"/><line x1="140" y1="415" x2="140" y2="445" style="stroke:#3a2f1a;stroke-width:1"/>
+                  <path d="M140 418 L132 436 L148 436 Z" style="fill:#f4ad3c"/>
+                  <circle cx="140" cy="430" r="3" style="fill:#0a0907;stroke:#f4ad3c;stroke-width:1.5"/>
+                  <text x="120" y="454" style="fill:#b9892f;font-size:8.5px;font-family:'JetBrains Mono',monospace">GUN&nbsp;FCS-01</text>
+                </g>
+
+                <!-- target marker -->
+                <g>
+                  <rect x="351" y="180" width="13" height="13" style="fill:none;stroke:#e24a30;stroke-width:1.5" transform="rotate(20 357 186)"/>
+                  <line x1="346" y1="186" x2="368" y2="186" style="stroke:#e24a30;stroke-width:.8"/><line x1="357" y1="175" x2="357" y2="197" style="stroke:#e24a30;stroke-width:.8"/>
+                  <line x1="357" y1="186" x2="330" y2="160" style="stroke:#e24a30;stroke-width:1.2;stroke-dasharray:3 3"/>
+                  <text x="372" y="184" style="fill:#e24a30;font-size:8.5px;font-family:'JetBrains Mono',monospace">TGT · ARMOR</text>
+                  <text x="372" y="196" style="fill:#8a4536;font-size:7.5px;font-family:'JetBrains Mono',monospace">8.60 km · 041.7°</text>
+                </g>
+
+                <!-- DYNAMIC: aim line / fired shot -->
+                {{ aDynMap }}
+              </g>
+
+              <!-- fixed chrome -->
+              <g transform="translate(680 56)">
+                <line x1="0" y1="22" x2="0" y2="-8" style="stroke:#8a7d63;stroke-width:1"/>
+                <path d="M0 -14 L-5 -4 L0 -7 L5 -4 Z" style="fill:#f4ad3c"/>
+                <text x="-4" y="36" style="fill:#8a7d63;font-size:9px;font-family:'JetBrains Mono',monospace">N</text>
+              </g>
+              <g transform="translate(28 498)">
+                <line x1="0" y1="0" x2="76" y2="0" style="stroke:#5c5345;stroke-width:1.5"/><line x1="0" y1="-4" x2="0" y2="4" style="stroke:#5c5345;stroke-width:1.5"/><line x1="76" y1="-4" x2="76" y2="4" style="stroke:#5c5345;stroke-width:1.5"/>
+                <text x="0" y="-7" style="fill:#5c5345;font-size:7.5px;font-family:'JetBrains Mono',monospace">0</text><text x="60" y="-7" style="fill:#5c5345;font-size:7.5px;font-family:'JetBrains Mono',monospace">2km</text>
+              </g>
+            </svg>
+
+            <!-- coordinate HUD -->
+            <div style="position:absolute;left:14px;top:12px;font-size:9.5px;letter-spacing:.06em;color:#8a7d63;background:rgba(10,9,7,.7);border:1px solid #2c2519;padding:5px 9px;pointer-events:none;">CURSOR&nbsp; <span style="color:#f4ad3c;">{{ aCoord }}</span></div>
+            <!-- map controls -->
+            <div style="position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:1px;background:#2c2519;border:1px solid #2c2519;">
+              <button onClick="{{ aZin }}" style="width:30px;height:28px;border:none;background:#120e09;color:#cdbf9f;font-size:15px;cursor:pointer;" style-hover="background:#1a1409;">+</button>
+              <button onClick="{{ aZout }}" style="width:30px;height:28px;border:none;background:#120e09;color:#cdbf9f;font-size:15px;cursor:pointer;" style-hover="background:#1a1409;">−</button>
+              <button onClick="{{ aZreset }}" style="width:30px;height:24px;border:none;background:#120e09;color:#8a7d63;font-size:11px;cursor:pointer;" style-hover="background:#1a1409;">⌖</button>
+            </div>
+            <div style="position:absolute;right:50px;bottom:14px;font-size:8.5px;letter-spacing:.08em;color:#6b6151;background:rgba(10,9,7,.7);border:1px solid #2c2519;padding:6px 8px;pointer-events:none;">ZOOM {{ aZoomTxt }}<br/><span style="color:#5c5345;">drag · scroll</span></div>
+          </div>
+        </div>
+
+        <!-- ===== RIGHT PANEL — FIRING SOLUTION INPUT ===== -->
+        <div style="grid-row:2 / 4;background:#0e0c0a;padding:15px 15px 13px;display:flex;flex-direction:column;gap:14px;overflow:hidden;">
+
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#f4ad3c;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.2em;color:#9a8a66;text-transform:uppercase;">Firing Solution — Your Input</span></div>
+            </div>
+            <div style="font-size:9px;color:#5c5345;letter-spacing:.04em;margin-bottom:12px;">↳ type, or use the steppers. Nothing here is computed for you.</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+              <!-- AZIMUTH -->
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#7b7058;margin-bottom:5px;">AZIMUTH&nbsp;(x)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ aAz }}" onChange="{{ aAzCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0d0a06;border:1px solid #3a2f1a;border-bottom:2px solid #6b5a38;color:#f4ad3c;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#f4ad3c;border-bottom-color:#f4ad3c;background:#19110699;box-shadow:0 0 0 2px rgba(244,173,60,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button onClick="{{ aAzUp }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▲</button>
+                    <button onClick="{{ aAzDn }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▼</button>
+                  </div>
+                </div>
+              </div>
+              <!-- ELEVATION -->
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#7b7058;margin-bottom:5px;">ELEVATION&nbsp;(y)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ aEl }}" onChange="{{ aElCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0d0a06;border:1px solid #3a2f1a;border-bottom:2px solid #6b5a38;color:#f4ad3c;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#f4ad3c;border-bottom-color:#f4ad3c;background:#19110699;box-shadow:0 0 0 2px rgba(244,173,60,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button onClick="{{ aElUp }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▲</button>
+                    <button onClick="{{ aElDn }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▼</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Z-CORR -->
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#7b7058;margin-bottom:5px;">Z-CORR&nbsp;(cross)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ aZc }}" onChange="{{ aZcCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0d0a06;border:1px solid #2c2519;border-bottom:2px solid #4a4234;color:#cdbf9f;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#f4ad3c;border-bottom-color:#f4ad3c;background:#19110699;box-shadow:0 0 0 2px rgba(244,173,60,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button onClick="{{ aZcUp }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▲</button>
+                    <button onClick="{{ aZcDn }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▼</button>
+                  </div>
+                </div>
+              </div>
+              <!-- CHARGE -->
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#7b7058;margin-bottom:5px;">PROPELLANT CHARGE</div>
+                <div style="display:flex;gap:5px;align-items:stretch;">
+                  <div style="flex:1;min-width:0;background:#0d0a06;border:1px solid #3a2f1a;border-bottom:2px solid #6b5a38;color:#f4ad3c;font-size:20px;padding:7px 9px;display:flex;align-items:center;">{{ aChargeTxt }}<span style="font-size:9px;color:#6b6151;margin-left:auto;">/7</span></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button onClick="{{ aChUp }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▲</button>
+                    <button onClick="{{ aChDn }}" style="width:26px;height:20px;border:1px solid #3a2f1a;background:#120e09;color:#b9892f;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#1a1409;border-color:#f4ad3c;">▼</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin-top:9px;">{{ aPips }}</div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#7b7058;margin-top:7px;"><span>MUZZLE VELOCITY v₀ <span style="color:#5c5345;">(from charge)</span></span><span style="color:#ece3d0;">{{ aV0txt }}</span></div>
+
+            <button onClick="{{ aFire }}" style="margin-top:12px;width:100%;border:none;background:#f4ad3c;color:#1a1206;font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.22em;padding:13px 0;cursor:pointer;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;" style-hover="background:#ffc25a;">
+              <span style="width:8px;height:8px;background:#1a1206;transform:rotate(45deg);"></span>Commit &amp; Fire
+            </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span style="font-size:9px;letter-spacing:.14em;color:#b9892f;display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#f4ad3c;animation:fs-pulse 1.6s ease-in-out infinite;"></span>ARMED</span>
+              <span style="font-size:9px;color:#5c5345;letter-spacing:.1em;">{{ aResetTxt }}</span>
+            </div>
+          </div>
+
+          <!-- CALCULATOR -->
+          <div style="border:1px solid #2c2519;background:#0a0806;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid #1c1812;">
+              <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.2em;color:#8a7d63;text-transform:uppercase;">Scientific Calculator</span>
+              <span style="font-size:8px;color:#5c5345;letter-spacing:.1em;">ARITHMETIC ONLY</span>
+            </div>
+            <div style="padding:9px 11px;font-size:10.5px;line-height:1.6;color:#6b6151;">
+              <div>v₀·cosθ·t &nbsp;=&nbsp;<span style="color:#9a8f78;">687.4 m</span></div>
+              <div style="color:#cdbf9f;">v₀·sinθ·t − ½·9.806·t² ▍</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#1c1812;border-top:1px solid #1c1812;">
+              <span style="background:#120e09;color:#8a7d63;font-size:10px;text-align:center;padding:7px 0;">sin</span><span style="background:#120e09;color:#8a7d63;font-size:10px;text-align:center;padding:7px 0;">cos</span><span style="background:#120e09;color:#8a7d63;font-size:10px;text-align:center;padding:7px 0;">tan</span><span style="background:#120e09;color:#8a7d63;font-size:10px;text-align:center;padding:7px 0;">√</span><span style="background:#120e09;color:#8a7d63;font-size:10px;text-align:center;padding:7px 0;">xⁿ</span>
+              <span style="background:#161109;color:#cdbf9f;font-size:11px;text-align:center;padding:7px 0;">7</span><span style="background:#161109;color:#cdbf9f;font-size:11px;text-align:center;padding:7px 0;">8</span><span style="background:#161109;color:#cdbf9f;font-size:11px;text-align:center;padding:7px 0;">9</span><span style="background:#120e09;color:#8a7d63;font-size:11px;text-align:center;padding:7px 0;">÷</span><span style="background:#120e09;color:#8a7d63;font-size:11px;text-align:center;padding:7px 0;">π</span>
+            </div>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:9px;">
+            <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid #2c2519;background:#100d0a;font-size:10px;color:#8a7d63;letter-spacing:.08em;"><span style="color:#f4ad3c;">▤</span>HANDBOOK<span style="color:#5c5345;">·</span><span style="color:#6b6151;">Ballistics&nbsp;/&nbsp;Trig&nbsp;/&nbsp;Relativity</span><span style="margin-left:auto;color:#5c5345;">▸</span></div>
+            <div style="display:flex;gap:9px;">
+              <button style="flex:1;border:1px solid #3a2f1a;background:transparent;color:#b9892f;font-size:10px;letter-spacing:.16em;padding:9px 0;cursor:pointer;text-transform:uppercase;font-family:'JetBrains Mono',monospace;" style-hover="background:#1a1409;">Help</button>
+              <button style="flex:1;border:1px solid #2c2519;background:transparent;color:#6b6151;font-size:10px;letter-spacing:.16em;padding:9px 0;cursor:pointer;text-transform:uppercase;font-family:'JetBrains Mono',monospace;" style-hover="border-color:#3a3322;color:#8a7d63;">Give&nbsp;Up</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== BOTTOM — VERTICAL PLANE (situation, not prediction) ===== -->
+        <div style="grid-column:2 / 3;grid-row:3 / 4;background:#0a0907;display:flex;flex-direction:column;overflow:hidden;border-top:1px solid #1c1812;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid #1c1812;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#f4ad3c;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.22em;color:#cdbf9f;text-transform:uppercase;">Vertical Plane — Range / Altitude</span></div>
+            <div style="display:flex;gap:14px;font-size:9px;"><span style="color:#b9892f;">▬ YOUR BARREL ANGLE</span><span style="color:#6b6151;">— FIRED ARC (SIMULATED)</span></div>
+          </div>
+          <div style="flex:1;display:flex;">
+            <div style="flex:1;position:relative;">
+              <svg width="100%" height="100%" viewBox="0 0 560 150" preserveAspectRatio="none" style="display:block;">
+                <line x1="40" y1="126" x2="556" y2="126" style="stroke:#2a2317;stroke-width:1"/>
+                <line x1="40" y1="14" x2="40" y2="126" style="stroke:#2a2317;stroke-width:1"/>
+                <g style="stroke:#15110b;stroke-width:1"><line x1="160" y1="20" x2="160" y2="126"/><line x1="280" y1="20" x2="280" y2="126"/><line x1="400" y1="20" x2="400" y2="126"/><line x1="520" y1="20" x2="520" y2="126"/></g>
+                <g style="fill:#5c5345;font-size:7.5px;font-family:'JetBrains Mono',monospace"><text x="156" y="138">3</text><text x="276" y="138">6</text><text x="396" y="138">9</text><text x="516" y="138">12 km</text><text x="14" y="40" transform="rotate(-90 14 40)">ALT</text></g>
+                {{ aDynVP }}
+              </svg>
+            </div>
+            <div style="width:184px;border-left:1px solid #1c1812;padding:11px 13px;display:flex;flex-direction:column;justify-content:center;gap:8px;">
+              <div style="font-size:8px;letter-spacing:.16em;color:#6b6151;margin-bottom:1px;">LAST SHOT — OBSERVED</div>
+              {{ aLast }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ===================  DIRECTION B  ====================== -->
+    <!-- ======================================================= -->
+    <div>
+      <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:14px;">
+        <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.18em;color:#1b1916;text-transform:uppercase;">Direction B — Sensorium</span>
+        <span style="font-size:11px;letter-spacing:.06em;color:#7b756c;">Cool ice-glass surveillance · Relativistic particle beam · interactive sim</span>
+      </div>
+
+      <div data-screen-label="Direction B — Beam station" style="position:relative;width:1440px;height:884px;background:#161e26;display:grid;grid-template-columns:312px 1fr 372px;grid-template-rows:46px 1fr 214px;gap:1px;overflow:hidden;border:1px solid #243039;box-shadow:0 18px 50px rgba(0,0,0,.28);">
+
+        <div style="position:absolute;inset:0;pointer-events:none;z-index:30;background:radial-gradient(120% 90% at 50% 0%,rgba(60,198,232,.06),transparent 55%);"></div>
+        <div style="position:absolute;inset:0;pointer-events:none;z-index:31;background-image:radial-gradient(rgba(60,198,232,.05) 1px,transparent 1px);background-size:22px 22px;"></div>
+
+        <!-- TOP BAR -->
+        <div style="grid-column:1 / 4;background:#0a0f14;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid #243039;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="width:9px;height:9px;background:#3cc6e8;transform:rotate(45deg);box-shadow:0 0 8px rgba(60,198,232,.7);"></span>
+            <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.26em;color:#dce8f2;text-transform:uppercase;">Firing&nbsp;Solution</span>
+            <span style="font-size:10px;letter-spacing:.16em;color:#5d6b78;border-left:1px solid #243039;padding-left:12px;">DEW-02 · STATION BETA</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;background:#0c2730;color:#3cc6e8;border:1px solid #1d4954;">WPN&nbsp;·&nbsp;RELATIVISTIC BEAM</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#8195a3;border:1px solid #243039;">WORLD · KEPLER-9c</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#8195a3;border:1px solid #243039;">TIER · HARD</span>
+            <span style="font-size:10px;letter-spacing:.12em;padding:5px 10px;color:#8195a3;border:1px solid #243039;">MSN&nbsp;9120-β</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:18px;">
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span style="font-size:8.5px;letter-spacing:.16em;color:#5d6b78;">CAPACITOR CHARGE</span>
+              <div style="width:128px;height:5px;background:#0f1c22;border:1px solid #1d3640;position:relative;overflow:hidden;">
+                <div style="position:absolute;inset:0;width:73%;background:linear-gradient(90deg,#2a7f97,#3cc6e8);animation:fs-reload 5s linear infinite alternate;"></div>
+              </div>
+            </div>
+            <span style="font-size:11px;letter-spacing:.1em;color:#8195a3;">CAREER <span style="color:#dce8f2;">12,840</span> PTS</span>
+          </div>
+        </div>
+
+        <!-- LEFT PANEL -->
+        <div style="grid-row:2 / 4;background:#0b0f14;padding:16px 16px 14px;display:flex;flex-direction:column;gap:18px;overflow:hidden;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#3cc6e8;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#6f8190;text-transform:uppercase;">Environment</span><span style="flex:1;height:1px;background:#16202a;"></span><span style="font-size:8.5px;color:#48565f;letter-spacing:.1em;">MEASURED</span></div>
+            <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;">
+              <svg width="78" height="78" viewBox="0 0 78 78">
+                <circle cx="39" cy="39" r="35" style="fill:none;stroke:#1d2932;stroke-width:1"/>
+                <circle cx="39" cy="39" r="26" style="fill:none;stroke:#14202a;stroke-width:1"/>
+                <line x1="39" y1="4" x2="39" y2="11" style="stroke:#5d6b78;stroke-width:1"/>
+                <text x="39" y="9" style="fill:#6f8190;font-size:7px;font-family:'JetBrains Mono',monospace;text-anchor:middle">N</text>
+                <g transform="rotate(118 39 39)"><line x1="39" y1="58" x2="39" y2="20" style="stroke:#3cc6e8;stroke-width:2"/><path d="M39 16 L34 26 L39 23 L44 26 Z" style="fill:#3cc6e8"/></g>
+                <circle cx="39" cy="39" r="2.5" style="fill:#0b0f14;stroke:#3cc6e8;stroke-width:1"/>
+              </svg>
+              <div style="flex:1;">
+                <div style="font-size:8.5px;letter-spacing:.14em;color:#5d6b78;">WIND VECTOR</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:21px;color:#dce8f2;line-height:1.2;margin-top:2px;">6.1<span style="font-size:11px;color:#6f8190;"> m/s</span></div>
+                <div style="font-size:11px;color:#5fb8d0;">FROM 118°</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#16202a;border:1px solid #16202a;">
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">ALTITUDE</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">+12 km</div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">AIR TEMP</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">−41<span style="font-size:10px;color:#5d6b78;"> °C</span></div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">AIR DENSITY ρ</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">0.312<span style="font-size:10px;color:#5d6b78;"> kg/m³</span></div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">LOCAL g</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">11.42<span style="font-size:10px;color:#5d6b78;"> m/s²</span></div></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#ff5a47;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#c08378;text-transform:uppercase;">Target — Observed</span><span style="flex:1;height:1px;background:#16202a;"></span><span style="font-size:8.5px;color:#48565f;letter-spacing:.1em;">SENSOR</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#16202a;border:1px solid #16202a;">
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">SLANT RANGE</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">38.6<span style="font-size:10px;color:#5d6b78;"> km</span></div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">BEARING</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">307.4<span style="font-size:10px;color:#5d6b78;"> °</span></div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">LOS ELEVATION</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">+11.6<span style="font-size:10px;color:#5d6b78;"> °</span></div></div>
+              <div style="background:#0d141a;padding:9px 10px;"><div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;">CLOSING</div><div style="font-size:15px;color:#dce8f2;margin-top:3px;">312<span style="font-size:10px;color:#5d6b78;"> m/s</span></div></div>
+            </div>
+            <div style="margin-top:7px;font-size:9px;color:#48565f;line-height:1.5;">↳ Near-c flight makes lead negligible — the work is energy &amp; γ.</div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><span style="width:5px;height:5px;background:#3cc6e8;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#6f8190;text-transform:uppercase;">Weapon Configuration</span><span style="flex:1;height:1px;background:#16202a;"></span></div>
+            <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#0c1f27;border-left:2px solid #3cc6e8;"><span style="color:#3cc6e8;font-size:9px;">▸</span><span style="font-size:11px;color:#dce8f2;letter-spacing:.06em;">RELATIVISTIC BEAM</span><span style="margin-left:auto;font-size:8px;color:#5fb8d0;letter-spacing:.1em;">ACTIVE</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#0d141a;border-left:2px solid #243039;"><span style="color:#3a4750;font-size:9px;">·</span><span style="font-size:11px;color:#6f8190;letter-spacing:.06em;">KINETIC ARTILLERY</span></div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:#0d141a;border-left:2px solid #243039;"><span style="color:#3a4750;font-size:9px;">·</span><span style="font-size:11px;color:#6f8190;letter-spacing:.06em;">INTERCEPTOR · RAILGUN · MISSILE</span></div>
+            </div>
+            <div style="font-size:8.5px;letter-spacing:.14em;color:#5d6b78;margin-bottom:6px;">PARTICLE / BEAM PROFILE</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;background:#0d141a;border:1px solid #243039;margin-bottom:10px;">
+              <span style="font-size:12px;color:#dce8f2;">PROTON · FOCUSED</span><span style="font-size:9px;color:#5d6b78;">▾</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#16202a;border:1px solid #16202a;">
+              <div style="background:#0d141a;padding:8px 10px;"><div style="font-size:8px;color:#5d6b78;letter-spacing:.1em;">REST MASS m₀</div><div style="font-size:13px;color:#aebecb;margin-top:2px;">938 MeV/c²</div></div>
+              <div style="background:#0d141a;padding:8px 10px;"><div style="font-size:8px;color:#5d6b78;letter-spacing:.1em;">BEAM β</div><div style="font-size:13px;color:#aebecb;margin-top:2px;">0.940 c</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER — PLOTTING BOARD -->
+        <div style="grid-row:2 / 3;background:#080c10;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #16202a;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#3cc6e8;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.24em;color:#aebecb;text-transform:uppercase;">Plotting Board · LOS</span><span style="font-size:9px;color:#48565f;letter-spacing:.1em;margin-left:4px;">GRID KP-9c · SECTOR 2-β</span></div>
+            <div style="display:flex;gap:8px;font-size:9px;color:#5d6b78;letter-spacing:.1em;"><span style="padding:3px 7px;border:1px solid #243039;color:#aebecb;">RULER</span><span style="padding:3px 7px;border:1px solid #243039;">PROTRACTOR</span><span style="padding:3px 7px;border:1px solid #243039;">COMPASS</span></div>
+          </div>
+          <div style="flex:1;position:relative;">
+            <svg width="100%" height="100%" viewBox="0 0 720 520" preserveAspectRatio="xMidYMid meet" style="display:block;cursor:grab;" onMouseDown="{{ bDown }}" onMouseMove="{{ bMove }}" onMouseUp="{{ bUp }}" onMouseLeave="{{ bUp }}" onWheel="{{ bWheel }}">
+              <defs><pattern id="gridBfine" width="9.5" height="9.5" patternUnits="userSpaceOnUse"><path d="M9.5 0 H0 V9.5" style="fill:none;stroke:#0b141a;stroke-width:.5"/></pattern></defs>
+              <rect x="0" y="0" width="720" height="520" style="fill:#080c10"/>
+              <g transform="{{ bMapT }}">
+                <rect x="-400" y="-400" width="1520" height="1320" style="fill:url(#gridBfine)"/>
+                <g style="stroke:#0f1a22;stroke-width:1">
+                  <line x1="92" y1="-200" x2="92" y2="720"/><line x1="190" y1="-200" x2="190" y2="720"/><line x1="288" y1="-200" x2="288" y2="720"/><line x1="386" y1="-200" x2="386" y2="720"/><line x1="484" y1="-200" x2="484" y2="720"/><line x1="582" y1="-200" x2="582" y2="720"/>
+                  <line x1="-200" y1="48" x2="900" y2="48"/><line x1="-200" y1="146" x2="900" y2="146"/><line x1="-200" y1="244" x2="900" y2="244"/><line x1="-200" y1="342" x2="900" y2="342"/><line x1="-200" y1="440" x2="900" y2="440"/>
+                </g>
+                <g style="fill:#46565f;font-size:8px;font-family:'JetBrains Mono',monospace"><text x="94" y="514">082</text><text x="192" y="514">084</text><text x="290" y="514">086</text><text x="388" y="514">088</text><text x="486" y="514">090</text><text x="4" y="46">214</text><text x="4" y="144">212</text><text x="4" y="242">210</text><text x="4" y="340">208</text><text x="4" y="438">206</text></g>
+
+                <g style="fill:none;stroke:#152631;stroke-width:1"><circle cx="540" cy="440" r="98"/><circle cx="540" cy="440" r="196"/><circle cx="540" cy="440" r="294"/><circle cx="540" cy="440" r="392"/></g>
+                <g style="fill:#46565f;font-size:7.5px;font-family:'JetBrains Mono',monospace"><text x="446" y="437">10km</text><text x="348" y="437">20km</text><text x="250" y="437">30km</text></g>
+
+                <line x1="470" y1="404" x2="120" y2="120" style="stroke:#3f5662;stroke-width:1;stroke-dasharray:5 4"/>
+                <line x1="560" y1="470" x2="260" y2="80" style="stroke:#3f5662;stroke-width:1;stroke-dasharray:5 4"/>
+                <rect x="465" y="399" width="10" height="10" style="fill:none;stroke:#7d97a3;stroke-width:1.3"/><text x="478" y="396" style="fill:#7d97a3;font-size:8px;font-family:'JetBrains Mono',monospace">OP-1</text>
+                <rect x="555" y="465" width="10" height="10" style="fill:none;stroke:#7d97a3;stroke-width:1.3"/><text x="558" y="492" style="fill:#7d97a3;font-size:8px;font-family:'JetBrains Mono',monospace">OP-2</text>
+
+                <g>
+                  <line x1="525" y1="440" x2="555" y2="440" style="stroke:#1d4954;stroke-width:1"/><line x1="540" y1="425" x2="540" y2="455" style="stroke:#1d4954;stroke-width:1"/>
+                  <path d="M540 428 L532 446 L548 446 Z" style="fill:#3cc6e8"/>
+                  <circle cx="540" cy="440" r="3" style="fill:#080c10;stroke:#3cc6e8;stroke-width:1.5"/>
+                  <text x="520" y="464" style="fill:#5fb8d0;font-size:8.5px;font-family:'JetBrains Mono',monospace">EMITTER&nbsp;DEW-02</text>
+                </g>
+                <g>
+                  <rect x="234" y="204" width="13" height="13" style="fill:none;stroke:#ff5a47;stroke-width:1.5" transform="rotate(28 240 210)"/>
+                  <line x1="229" y1="210" x2="251" y2="210" style="stroke:#ff5a47;stroke-width:.8"/><line x1="240" y1="199" x2="240" y2="221" style="stroke:#ff5a47;stroke-width:.8"/>
+                  <text x="186" y="198" style="fill:#ff5a47;font-size:8.5px;font-family:'JetBrains Mono',monospace">TGT · AIRCRAFT</text>
+                  <text x="186" y="234" style="fill:#5fb8d0;font-size:7.5px;font-family:'JetBrains Mono',monospace">LEAD ≈ 0 · t 0.14 ms</text>
+                </g>
+                {{ bDynMap }}
+              </g>
+              <g transform="translate(680 56)"><line x1="0" y1="22" x2="0" y2="-8" style="stroke:#6f8190;stroke-width:1"/><path d="M0 -14 L-5 -4 L0 -7 L5 -4 Z" style="fill:#3cc6e8"/><text x="-4" y="36" style="fill:#6f8190;font-size:9px;font-family:'JetBrains Mono',monospace">N</text></g>
+              <g transform="translate(28 498)"><line x1="0" y1="0" x2="98" y2="0" style="stroke:#46565f;stroke-width:1.5"/><line x1="0" y1="-4" x2="0" y2="4" style="stroke:#46565f;stroke-width:1.5"/><line x1="98" y1="-4" x2="98" y2="4" style="stroke:#46565f;stroke-width:1.5"/><text x="0" y="-7" style="fill:#46565f;font-size:7.5px;font-family:'JetBrains Mono',monospace">0</text><text x="80" y="-7" style="fill:#46565f;font-size:7.5px;font-family:'JetBrains Mono',monospace">10km</text></g>
+            </svg>
+            <div style="position:absolute;left:14px;top:12px;font-size:9.5px;letter-spacing:.06em;color:#6f8190;background:rgba(8,12,16,.7);border:1px solid #243039;padding:5px 9px;pointer-events:none;">CURSOR&nbsp; <span style="color:#3cc6e8;">{{ bCoord }}</span></div>
+            <div style="position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:1px;background:#243039;border:1px solid #243039;">
+              <button onClick="{{ bZin }}" style="width:30px;height:28px;border:none;background:#0d141a;color:#aebecb;font-size:15px;cursor:pointer;" style-hover="background:#0c1f27;">+</button>
+              <button onClick="{{ bZout }}" style="width:30px;height:28px;border:none;background:#0d141a;color:#aebecb;font-size:15px;cursor:pointer;" style-hover="background:#0c1f27;">−</button>
+              <button onClick="{{ bZreset }}" style="width:30px;height:24px;border:none;background:#0d141a;color:#6f8190;font-size:11px;cursor:pointer;" style-hover="background:#0c1f27;">⌖</button>
+            </div>
+            <div style="position:absolute;right:50px;bottom:14px;font-size:8.5px;letter-spacing:.08em;color:#5d6b78;background:rgba(8,12,16,.7);border:1px solid #243039;padding:6px 8px;pointer-events:none;">ZOOM {{ bZoomTxt }}<br/><span style="color:#48565f;">drag · scroll</span></div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div style="grid-row:2 / 4;background:#0b0f14;padding:15px 15px 13px;display:flex;flex-direction:column;gap:14px;overflow:hidden;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#3cc6e8;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.2em;color:#6f8190;text-transform:uppercase;">Firing Solution — Your Input</span></div>
+            <div style="font-size:9px;color:#48565f;letter-spacing:.04em;margin:4px 0 12px;">↳ point the emitter &amp; set pulse energy. The board never solves it.</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;margin-bottom:5px;">AZIMUTH&nbsp;(x)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ bAz }}" onChange="{{ bAzCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0a0f14;border:1px solid #1d4954;border-bottom:2px solid #2a6172;color:#3cc6e8;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#3cc6e8;border-bottom-color:#3cc6e8;background:#0c1f2799;box-shadow:0 0 0 2px rgba(60,198,232,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><button onClick="{{ bAzUp }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▲</button><button onClick="{{ bAzDn }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▼</button></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;margin-bottom:5px;">ELEVATION&nbsp;(y)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ bEl }}" onChange="{{ bElCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0a0f14;border:1px solid #1d4954;border-bottom:2px solid #2a6172;color:#3cc6e8;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#3cc6e8;border-bottom-color:#3cc6e8;background:#0c1f2799;box-shadow:0 0 0 2px rgba(60,198,232,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><button onClick="{{ bElUp }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▲</button><button onClick="{{ bElDn }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▼</button></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;margin-bottom:5px;">Z-CORR&nbsp;(cross)&nbsp;·&nbsp;°</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ bZc }}" onChange="{{ bZcCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0a0f14;border:1px solid #16242c;border-bottom:2px solid #243039;color:#aebecb;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#3cc6e8;border-bottom-color:#3cc6e8;background:#0c1f2799;box-shadow:0 0 0 2px rgba(60,198,232,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><button onClick="{{ bZcUp }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▲</button><button onClick="{{ bZcDn }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▼</button></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:8.5px;letter-spacing:.12em;color:#5d6b78;margin-bottom:5px;">PULSE ENERGY · GJ</div>
+                <div style="display:flex;gap:5px;">
+                  <input value="{{ bEn }}" onChange="{{ bEnCh }}" inputmode="decimal" style="flex:1;min-width:0;background:#0a0f14;border:1px solid #1d4954;border-bottom:2px solid #2a6172;color:#3cc6e8;font-size:20px;padding:7px 9px;outline:none;" style-focus="border-color:#3cc6e8;border-bottom-color:#3cc6e8;background:#0c1f2799;box-shadow:0 0 0 2px rgba(60,198,232,.25);"/>
+                  <div style="display:flex;flex-direction:column;gap:2px;"><button onClick="{{ bEnUp }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▲</button><button onClick="{{ bEnDn }}" style="width:26px;height:20px;border:1px solid #1d4954;background:#0d141a;color:#5fb8d0;font-size:9px;cursor:pointer;line-height:1;" style-hover="background:#0c1f27;border-color:#3cc6e8;">▼</button></div>
+                </div>
+              </div>
+            </div>
+
+            <button onClick="{{ bFire }}" style="margin-top:13px;width:100%;border:none;background:#3cc6e8;color:#04161c;font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.22em;padding:13px 0;cursor:pointer;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;" style-hover="background:#6fdcf6;">
+              <span style="width:8px;height:8px;background:#04161c;transform:rotate(45deg);"></span>Commit &amp; Fire
+            </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span style="font-size:9px;letter-spacing:.14em;color:#5fb8d0;display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#3cc6e8;animation:fs-pulse 1.6s ease-in-out infinite;"></span>CHARGED</span>
+              <span style="font-size:9px;color:#48565f;letter-spacing:.1em;">{{ bResetTxt }}</span>
+            </div>
+          </div>
+
+          <!-- RELATIVISTIC REGIME (derived from YOUR energy) -->
+          <div style="border:1px solid #243039;background:#0a0f14;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid #16202a;">
+              <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.2em;color:#6f8190;text-transform:uppercase;">Relativistic Regime</span>
+              <span style="font-size:8px;color:#5fb8d0;letter-spacing:.1em;">FROM YOUR INPUT</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#16202a;">
+              <div style="background:#0d141a;padding:8px 11px;"><div style="font-size:8px;color:#5d6b78;">β</div><div style="font-size:14px;color:#dce8f2;margin-top:2px;">0.940</div></div>
+              <div style="background:#0d141a;padding:8px 11px;"><div style="font-size:8px;color:#5d6b78;">LORENTZ γ</div><div style="font-size:14px;color:#dce8f2;margin-top:2px;">2.931</div></div>
+              <div style="background:#0d141a;padding:8px 11px;"><div style="font-size:8px;color:#5d6b78;">PULSE ENERGY</div><div style="font-size:14px;color:#3cc6e8;margin-top:2px;">{{ bEnGJ }}</div></div>
+              <div style="background:#0d141a;padding:8px 11px;"><div style="font-size:8px;color:#5d6b78;">KILL THRESHOLD</div><div style="font-size:14px;color:#aebecb;margin-top:2px;">≥ 3.5 GJ</div></div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #243039;background:#080c10;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid #16202a;"><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.2em;color:#6f8190;text-transform:uppercase;">Scientific Calculator</span><span style="font-size:8px;color:#48565f;letter-spacing:.1em;">ARITHMETIC ONLY</span></div>
+            <div style="padding:9px 11px;font-size:10.5px;line-height:1.6;color:#5d6b78;"><div>1/√(1−β²) &nbsp;=&nbsp;<span style="color:#8195a3;">2.931</span></div><div style="color:#aebecb;">(γ−1)·m₀·c² ▍</div></div>
+          </div>
+
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:9px;">
+            <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid #243039;background:#0d141a;font-size:10px;color:#6f8190;letter-spacing:.08em;"><span style="color:#3cc6e8;">▤</span>HANDBOOK<span style="color:#48565f;">·</span><span style="color:#5d6b78;">Relativity&nbsp;/&nbsp;Thermal&nbsp;/&nbsp;Vectors</span><span style="margin-left:auto;color:#48565f;">▸</span></div>
+            <div style="display:flex;gap:9px;">
+              <button style="flex:1;border:1px solid #1d4954;background:transparent;color:#5fb8d0;font-size:10px;letter-spacing:.16em;padding:9px 0;cursor:pointer;text-transform:uppercase;font-family:'JetBrains Mono',monospace;" style-hover="background:#0c1f27;">Help</button>
+              <button style="flex:1;border:1px solid #243039;background:transparent;color:#5d6b78;font-size:10px;letter-spacing:.16em;padding:9px 0;cursor:pointer;text-transform:uppercase;font-family:'JetBrains Mono',monospace;" style-hover="border-color:#2c3b45;color:#8195a3;">Give&nbsp;Up</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM — VERTICAL PLANE -->
+        <div style="grid-column:2 / 3;grid-row:3 / 4;background:#080c10;display:flex;flex-direction:column;overflow:hidden;border-top:1px solid #16202a;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid #16202a;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:5px;height:5px;background:#3cc6e8;"></span><span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.22em;color:#aebecb;text-transform:uppercase;">Vertical Plane — Slant / Altitude</span></div>
+            <div style="display:flex;gap:14px;font-size:9px;"><span style="color:#5fb8d0;">▬ YOUR AIM</span><span style="color:#5d6b78;">— FIRED RAY (SIMULATED)</span></div>
+          </div>
+          <div style="flex:1;display:flex;">
+            <div style="flex:1;position:relative;">
+              <svg width="100%" height="100%" viewBox="0 0 560 150" preserveAspectRatio="none" style="display:block;">
+                <line x1="40" y1="126" x2="556" y2="126" style="stroke:#1d2932;stroke-width:1"/>
+                <line x1="40" y1="14" x2="40" y2="126" style="stroke:#1d2932;stroke-width:1"/>
+                <g style="stroke:#0f1a22;stroke-width:1"><line x1="170" y1="20" x2="170" y2="126"/><line x1="300" y1="20" x2="300" y2="126"/><line x1="430" y1="20" x2="430" y2="126"/></g>
+                <g style="fill:#46565f;font-size:7.5px;font-family:'JetBrains Mono',monospace"><text x="166" y="138">12</text><text x="296" y="138">24</text><text x="426" y="138">36 km</text><text x="14" y="40" transform="rotate(-90 14 40)">ALT</text></g>
+                {{ bDynVP }}
+              </svg>
+            </div>
+            <div style="width:184px;border-left:1px solid #16202a;padding:11px 13px;display:flex;flex-direction:column;justify-content:center;gap:8px;">
+              <div style="font-size:8px;letter-spacing:.16em;color:#5d6b78;margin-bottom:1px;">LAST SHOT — OBSERVED</div>
+              {{ bLast }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    a: { az:'42.0', el:'38.0', zc:'+1.2', charge:5, pan:{x:0,y:0}, zoom:1, fired:null, cursor:'— · —' },
+    b: { az:'305.0', el:'13.0', zc:'+0.3', en:'4.2', pan:{x:0,y:0}, zoom:1, fired:null, cursor:'— · —' },
+  };
+
+  geo = {
+    a: { gx:140, gy:430, scale:0.038, kmpx:38, R:8600, brg:41.7, tAlt:40, g:9.806, E0:44, N0:315, vpx:40, vpy:0.030 },
+    b: { gx:540, gy:440, scale:0.0098, kmpx:9.8, R:38600, brg:307.4, elT:11.6, g:11.42, E0:88, N0:206, vpx:0.0132, vpy:0.0072 },
+  };
+
+  num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  v0(c){ return 120 + c*36; }
+  set(f,k,v){ this.setState(s => ({ [f]: { ...s[f], [k]: v } })); }
+  stepF(f,k,d,dec){ this.set(f,k,(this.num(this.state[f][k]) + d).toFixed(dec===undefined?1:dec)); }
+
+  // ---------- pan / zoom ----------
+  vbPoint(e){
+    const r = e.currentTarget.getBoundingClientRect();
+    return { x:(e.clientX-r.left)/r.width*720, y:(e.clientY-r.top)/r.height*520 };
+  }
+  onDown(f,e){ const p=this.vbPoint(e); this._drag={f, sx:p.x, sy:p.y, px:this.state[f].pan.x, py:this.state[f].pan.y}; e.currentTarget.style.cursor='grabbing'; }
+  onUp(f,e){ if(this._drag) this._drag=null; if(e&&e.currentTarget) e.currentTarget.style.cursor='grab'; }
+  onMove(f,e){
+    const p=this.vbPoint(e);
+    const G=this.geo[f], st=this.state[f];
+    // cursor coords (invert transform)
+    const cx=(p.x-st.pan.x)/st.zoom, cy=(p.y-st.pan.y)/st.zoom;
+    const E=G.E0+(cx-G.gx)/G.kmpx, N=G.N0-(cy-G.gy)/G.kmpx;
+    const coord='E '+E.toFixed(2)+' · N '+N.toFixed(2);
+    if(this._drag && this._drag.f===f){
+      const nx=this._drag.px+(p.x-this._drag.sx), ny=this._drag.py+(p.y-this._drag.sy);
+      this.setState(s=>({ [f]:{ ...s[f], pan:{x:nx,y:ny}, cursor:coord } }));
+    } else {
+      this.setState(s=>({ [f]:{ ...s[f], cursor:coord } }));
+    }
+  }
+  onWheel(f,e){
+    if(e.preventDefault) e.preventDefault();
+    const st=this.state[f];
+    const z=Math.min(3, Math.max(0.6, st.zoom*(e.deltaY<0?1.12:0.89)));
+    this.setState(s=>({ [f]:{ ...s[f], zoom:z } }));
+  }
+  zoomBtn(f,m){ const st=this.state[f]; const z=Math.min(3,Math.max(0.6,st.zoom*m)); this.set(f,'zoom',z); }
+  zreset(f){ this.setState(s=>({ [f]:{ ...s[f], zoom:1, pan:{x:0,y:0} } })); }
+  mapT(f){ const st=this.state[f]; return 'translate('+st.pan.x.toFixed(1)+' '+st.pan.y.toFixed(1)+') scale('+st.zoom.toFixed(3)+')'; }
+
+  // ---------- fire ----------
+  fire(f){
+    if(f==='a'){
+      const st=this.state.a, G=this.geo.a;
+      const v0=this.v0(st.charge), elDeg=this.num(st.el), el=elDeg*Math.PI/180, az=this.num(st.az), g=G.g;
+      const T=2*v0*Math.sin(el)/g;
+      const impactRange=v0*v0*Math.sin(2*el)/g;
+      const rangeErr=impactRange-G.R;
+      const latErr=G.R*Math.sin((az-G.brg)*Math.PI/180);
+      const miss=Math.sqrt(rangeErr*rangeErr+latErr*latErr);
+      const apex=v0*v0*Math.sin(el)*Math.sin(el)/(2*g);
+      const pts=[]; const N=44;
+      for(let i=0;i<=N;i++){ const t=T*i/N; pts.push([v0*Math.cos(el)*t, v0*Math.sin(el)*t-0.5*g*t*t]); }
+      const shot=(st.fired?st.fired.shot:0)+1;
+      this.set('a','fired',{impactRange,rangeErr,latErr,miss,apex,T,az,el:elDeg,v0,pts,hit:miss<70,shot});
+    } else {
+      const st=this.state.b, G=this.geo.b;
+      const az=this.num(st.az), el=this.num(st.el), en=this.num(st.en);
+      const azErr=az-G.brg, elErr=el-G.elT;
+      const angErr=Math.sqrt(azErr*azErr+elErr*elErr);
+      const lat=Math.abs(G.R*Math.sin(angErr*Math.PI/180));
+      const energyOk=en>=3.5;
+      const onTgt=lat<140;
+      const shot=(st.fired?st.fired.shot:0)+1;
+      this.set('b','fired',{az,el,en,azErr,elErr,angErr,lat,energyOk,onTgt,hit:onTgt&&energyOk,shot});
+    }
+  }
+
+  // ---------- dynamic SVG: minimap ----------
+  dynMap(f){
+    const e=React.createElement, st=this.state[f], G=this.geo[f], els=[], accent=f==='a'?'#f4ad3c':'#7fe3ff', red=f==='a'?'#e24a30':'#ff5a47';
+    const az=this.num(st.az), L=f==='a'?230:360;
+    const ax=G.gx+Math.sin(az*Math.PI/180)*L, ay=G.gy-Math.cos(az*Math.PI/180)*L;
+    els.push(e('line',{key:'aim',x1:G.gx,y1:G.gy,x2:ax,y2:ay,stroke:accent,strokeWidth:1.4,strokeDasharray:'7 5',opacity:.85}));
+    els.push(e('text',{key:'aimt',x:ax+4,y:ay,fill:accent,fontSize:8,fontFamily:"'JetBrains Mono',monospace"},'AIM '+az.toFixed(1)+'°'));
+    if(st.fired){
+      if(f==='a'){
+        const ir=Math.min(st.fired.impactRange, 16000);
+        const ix=G.gx+Math.sin(st.fired.az*Math.PI/180)*ir*G.scale, iy=G.gy-Math.cos(st.fired.az*Math.PI/180)*ir*G.scale;
+        els.push(e('line',{key:'track',x1:G.gx,y1:G.gy,x2:ix,y2:iy,stroke:accent,strokeWidth:1.6,strokeDasharray:'9 5',style:{animation:'fs-flow 1.4s linear infinite'}}));
+        els.push(e('circle',{key:'spl',cx:ix,cy:iy,r:st.fired.hit?9:14,fill:st.fired.hit?'rgba(244,173,60,.18)':'rgba(226,74,48,.14)',stroke:st.fired.hit?accent:red,strokeWidth:1}));
+        els.push(e('line',{key:'x1',x1:ix-6,y1:iy-6,x2:ix+6,y2:iy+6,stroke:st.fired.hit?accent:red,strokeWidth:1.8}));
+        els.push(e('line',{key:'x2',x1:ix-6,y1:iy+6,x2:ix+6,y2:iy-6,stroke:st.fired.hit?accent:red,strokeWidth:1.8}));
+        if(!st.fired.hit){
+          const tx=G.gx+Math.sin(G.brg*Math.PI/180)*G.R*G.scale, ty=G.gy-Math.cos(G.brg*Math.PI/180)*G.R*G.scale;
+          els.push(e('line',{key:'miss',x1:ix,y1:iy,x2:tx,y2:ty,stroke:red,strokeWidth:1,strokeDasharray:'2 3',opacity:.8}));
+        }
+      } else {
+        const fl=st.fired, ang=fl.az, el=fl.el;
+        const ex=G.gx+Math.sin(ang*Math.PI/180)*392, ey=G.gy-Math.cos(ang*Math.PI/180)*392;
+        els.push(e('line',{key:'beamg',x1:G.gx,y1:G.gy,x2:ex,y2:ey,stroke:'#1d4954',strokeWidth:4}));
+        els.push(e('line',{key:'beam',x1:G.gx,y1:G.gy,x2:ex,y2:ey,stroke:fl.hit?'#7fe3ff':'#ff8a52',strokeWidth:1.5,strokeDasharray:'14 8',style:{animation:'fs-flow .5s linear infinite'}}));
+        const tx=G.gx+Math.sin(G.brg*Math.PI/180)*G.R*G.scale, ty=G.gy-Math.cos(G.brg*Math.PI/180)*G.R*G.scale;
+        const hx=G.gx+Math.sin(ang*Math.PI/180)*G.R*G.scale, hy=G.gy-Math.cos(ang*Math.PI/180)*G.R*G.scale;
+        els.push(e('circle',{key:'hit',cx:hx,cy:hy,r:fl.hit?11:8,fill:fl.hit?'rgba(127,227,255,.18)':'rgba(255,138,82,.16)',stroke:fl.hit?'#7fe3ff':'#ff8a52',strokeWidth:1}));
+        els.push(e('line',{key:'x1',x1:hx-5,y1:hy-5,x2:hx+5,y2:hy+5,stroke:fl.hit?'#7fe3ff':'#ff5a47',strokeWidth:1.8}));
+        els.push(e('line',{key:'x2',x1:hx-5,y1:hy+5,x2:hx+5,y2:hy-5,stroke:fl.hit?'#7fe3ff':'#ff5a47',strokeWidth:1.8}));
+      }
+    }
+    return e('g',{}, els);
+  }
+
+  // ---------- dynamic SVG: vertical plane ----------
+  dynVP(f){
+    const e=React.createElement, st=this.state[f], G=this.geo[f], els=[], accent=f==='a'?'#f4ad3c':'#7fe3ff';
+    const gx=40, gy=126;
+    if(f==='a'){
+      const el=this.num(st.el)*Math.PI/180;
+      const bl=118;
+      els.push(e('line',{key:'barrel',x1:gx,y1:gy,x2:gx+Math.cos(el)*bl,y2:gy-Math.sin(el)*bl,stroke:accent,strokeWidth:2,strokeDasharray:'5 4'}));
+      els.push(e('path',{key:'wedge',d:'M'+gx+' '+gy+' L'+(gx+34)+' '+gy+' A34 34 0 0 0 '+(gx+34*Math.cos(el))+' '+(gy-34*Math.sin(el))+' Z',fill:'rgba(244,173,60,.10)',stroke:accent,strokeWidth:.7}));
+      els.push(e('text',{key:'elt',x:gx+40,y:gy-10,fill:accent,fontSize:9,fontFamily:"'JetBrains Mono',monospace"},this.num(st.el).toFixed(1)+'°'));
+      // target marker at R, alt
+      const tx=gx+G.R*G.vpx/1000*1000*0+ (G.R/1000)*G.vpx*1000; // see below
+      const txp=gx+(G.R/1000)* (G.vpx) *1000; // vpx px per km? define vpx=40 px/km
+      const txX=gx+(G.R/1000)*G.vpx, txY=gy-(G.tAlt)*G.vpy;
+      els.push(e('rect',{key:'tgt',x:txX-5,y:txY-5,width:10,height:10,fill:'none',stroke:'#e24a30',strokeWidth:1.5}));
+      els.push(e('text',{key:'tgtt',x:txX-6,y:txY-9,fill:'#e24a30',fontSize:7.5,fontFamily:"'JetBrains Mono',monospace"},'TGT 8.6km'));
+      if(st.fired){
+        const pts=st.fired.pts.map(p=>[gx+(p[0]/1000)*G.vpx, gy-Math.max(0,p[1])*G.vpy]);
+        const d='M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L');
+        els.push(e('path',{key:'arc',d:d,fill:'none',stroke:st.fired.hit?accent:'#8a7d63',strokeWidth:1.8,opacity:st.fired.hit?1:.85}));
+        const ix=pts[pts.length-1][0], iy=pts[pts.length-1][1];
+        els.push(e('line',{key:'ix1',x1:ix-5,y1:iy-5,x2:ix+5,y2:iy+5,stroke:st.fired.hit?accent:'#e24a30',strokeWidth:1.6}));
+        els.push(e('line',{key:'ix2',x1:ix-5,y1:iy+5,x2:ix+5,y2:iy-5,stroke:st.fired.hit?accent:'#e24a30',strokeWidth:1.6}));
+      }
+    } else {
+      const el=this.num(st.el)*Math.PI/180, bl=150;
+      els.push(e('line',{key:'aim',x1:gx,y1:gy,x2:gx+Math.cos(el)*bl,y2:gy-Math.sin(el)*bl,stroke:accent,strokeWidth:2,strokeDasharray:'5 4'}));
+      els.push(e('text',{key:'elt',x:gx+44,y:gy-12,fill:accent,fontSize:9,fontFamily:"'JetBrains Mono',monospace"},this.num(st.el).toFixed(1)+'°'));
+      const txX=gx+(G.R/1000)*G.vpx, txY=gy-12000*G.vpy;
+      els.push(e('rect',{key:'tgt',x:txX-5,y:txY-5,width:10,height:10,fill:'none',stroke:'#ff5a47',strokeWidth:1.5}));
+      els.push(e('text',{key:'tgtt',x:txX-30,y:txY-9,fill:'#ff5a47',fontSize:7.5,fontFamily:"'JetBrains Mono',monospace"},'TGT 38.6km'));
+      if(st.fired){
+        const ex=gx+Math.cos(this.num(st.el)*Math.PI/180)*((G.R/1000)*G.vpx), ey=gy-Math.sin(this.num(st.el)*Math.PI/180)*((G.R/1000)*G.vpx);
+        els.push(e('line',{key:'ray',x1:gx,y1:gy,x2:ex,y2:ey,stroke:st.fired.hit?'#7fe3ff':'#ff8a52',strokeWidth:2.2}));
+        if(st.fired.hit){ els.push(e('circle',{key:'bloom',cx:txX,cy:txY,r:9,fill:'rgba(255,138,82,.18)',stroke:'#ff8a52',strokeWidth:.8})); }
+      }
+    }
+    return e('g',{}, els);
+  }
+
+  // ---------- last-shot readout ----------
+  lastEl(f){
+    const e=React.createElement, st=this.state[f];
+    const row=(label,val,c)=>e('div',{style:{display:'flex',justifyContent:'space-between',fontSize:'10px'}},
+      e('span',{style:{color:f==='a'?'#6b6151':'#5d6b78'}},label),
+      e('span',{style:{color:c}},val));
+    if(!st.fired){
+      return e('div',{style:{fontSize:'10px',color:f==='a'?'#5c5345':'#48565f',lineHeight:1.6}},'— NO SHOT FIRED —',e('br'),'dial a solution, then Commit.');
+    }
+    const fl=st.fired, base=f==='a'?'#cdbf9f':'#aebecb';
+    if(f==='a'){
+      const dirLR=fl.latErr>1?'RIGHT':(fl.latErr<-1?'LEFT':'ON LINE');
+      const dirSL=fl.rangeErr>1?'LONG':(fl.rangeErr<-1?'SHORT':'ON RANGE');
+      const acc=fl.hit?'#f4ad3c':'#e24a30';
+      return e('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+        e('div',{style:{fontSize:'12px',letterSpacing:'.08em',color:acc,fontFamily:"'Saira Condensed',sans-serif",fontWeight:700}}, fl.hit?'◆ TARGET DESTROYED':'△ CALIBRATION SHOT'),
+        row('SHOT NO.', String(fl.shot).padStart(2,'0'), base),
+        row('MISS DIST.', Math.round(fl.miss)+' m', acc),
+        row('RANGE', Math.abs(Math.round(fl.rangeErr))+' m '+dirSL, base),
+        row('LINE', Math.abs(Math.round(fl.latErr))+' m '+dirLR, base),
+        e('div',{style:{fontSize:'8.5px',color:'#5c5345',borderTop:'1px solid #221d15',paddingTop:'7px',lineHeight:1.5}}, fl.hit?'within splash tolerance.':'apply correction & re-fire.')
+      );
+    } else {
+      const acc=fl.hit?'#3cc6e8':'#ff8a52';
+      return e('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+        e('div',{style:{fontSize:'12px',letterSpacing:'.08em',color:acc,fontFamily:"'Saira Condensed',sans-serif",fontWeight:700}}, fl.hit?'◆ TARGET NEUTRALISED':(fl.onTgt?'△ UNDER-POWERED':'△ OFF-AXIS')),
+        row('SHOT NO.', String(fl.shot).padStart(2,'0'), base),
+        row('LATERAL MISS', Math.round(fl.lat)+' m', acc),
+        row('ANG. ERROR', fl.angErr.toFixed(2)+'°', base),
+        row('DELIVERED', fl.en.toFixed(1)+' GJ', fl.energyOk?'#aebecb':'#ff8a52'),
+        e('div',{style:{fontSize:'8.5px',color:'#48565f',borderTop:'1px solid #16202a',paddingTop:'7px',lineHeight:1.5}}, fl.hit?'thermal kill confirmed.':(fl.onTgt?'on-axis but flux too low.':'re-point the emitter.'))
+      );
+    }
+  }
+
+  pips(f){
+    const e=React.createElement, c=this.state.a.charge, els=[];
+    for(let i=0;i<7;i++){ els.push(e('span',{key:i,style:{flex:1,height:'15px',background:i<c?'#f4ad3c':'#1f1a10',border:i<c?'none':'1px solid #2c2519'}})); }
+    return e('div',{style:{display:'flex',gap:'5px',flex:1}}, els);
+  }
+
+  renderVals(){
+    const A=this.state.a, B=this.state.b;
+    return {
+      // ---- A ----
+      aMapT:this.mapT('a'), aDynMap:this.dynMap('a'), aDynVP:this.dynVP('a'), aLast:this.lastEl('a'), aPips:this.pips('a'),
+      aCoord:A.cursor, aAz:A.az, aEl:A.el, aZc:A.zc, aChargeTxt:String(A.charge),
+      aV0txt:this.v0(A.charge)+' m/s', aZoomTxt:A.zoom.toFixed(1)+'×',
+      aResetTxt:A.fired?('SHOT '+String(A.fired.shot).padStart(2,'0')):'NO SHOT',
+      aAzCh:ev=>this.set('a','az',ev.target.value), aElCh:ev=>this.set('a','el',ev.target.value), aZcCh:ev=>this.set('a','zc',ev.target.value),
+      aAzUp:()=>this.stepF('a','az',1), aAzDn:()=>this.stepF('a','az',-1),
+      aElUp:()=>this.stepF('a','el',0.5), aElDn:()=>this.stepF('a','el',-0.5),
+      aZcUp:()=>this.stepF('a','zc',0.1), aZcDn:()=>this.stepF('a','zc',-0.1),
+      aChUp:()=>this.set('a','charge',Math.min(7,A.charge+1)), aChDn:()=>this.set('a','charge',Math.max(1,A.charge-1)),
+      aFire:()=>this.fire('a'),
+      aZin:()=>this.zoomBtn('a',1.25), aZout:()=>this.zoomBtn('a',0.8), aZreset:()=>this.zreset('a'),
+      aDown:ev=>this.onDown('a',ev), aMove:ev=>this.onMove('a',ev), aUp:ev=>this.onUp('a',ev), aWheel:ev=>this.onWheel('a',ev),
+      // ---- B ----
+      bMapT:this.mapT('b'), bDynMap:this.dynMap('b'), bDynVP:this.dynVP('b'), bLast:this.lastEl('b'),
+      bCoord:B.cursor, bAz:B.az, bEl:B.el, bZc:B.zc, bEn:B.en, bEnGJ:this.num(B.en).toFixed(1)+' GJ', bZoomTxt:B.zoom.toFixed(1)+'×',
+      bResetTxt:B.fired?('SHOT '+String(B.fired.shot).padStart(2,'0')):'NO SHOT',
+      bAzCh:ev=>this.set('b','az',ev.target.value), bElCh:ev=>this.set('b','el',ev.target.value), bZcCh:ev=>this.set('b','zc',ev.target.value), bEnCh:ev=>this.set('b','en',ev.target.value),
+      bAzUp:()=>this.stepF('b','az',1), bAzDn:()=>this.stepF('b','az',-1),
+      bElUp:()=>this.stepF('b','el',0.5), bElDn:()=>this.stepF('b','el',-0.5),
+      bZcUp:()=>this.stepF('b','zc',0.1), bZcDn:()=>this.stepF('b','zc',-0.1),
+      bEnUp:()=>this.stepF('b','en',0.5), bEnDn:()=>this.stepF('b','en',-0.5),
+      bFire:()=>this.fire('b'),
+      bZin:()=>this.zoomBtn('b',1.25), bZout:()=>this.zoomBtn('b',0.8), bZreset:()=>this.zreset('b'),
+      bDown:ev=>this.onDown('b',ev), bMove:ev=>this.onMove('b',ev), bUp:ev=>this.onUp('b',ev), bWheel:ev=>this.onWheel('b',ev),
+    };
+  }
+}
+</script>
+</body>
+</html>
