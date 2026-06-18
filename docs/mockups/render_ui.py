@@ -202,12 +202,27 @@ def render(kind, data, issues, callouts, outfile):
     panel(d,p,[CX0,bdy0,CX1,bdy0+34],"PanelDeep","BorderSoft",0)
     d.rectangle([CX0+8,bdy0+14,CX0+13,bdy0+19],fill=hx(p["Accent"]))
     text(d,p,(CX0+20,bdy0+9),"PLOTTING BOARD","Text",12)
+    # measurement toolbar
+    tx=CX0+150
+    for lab,active,dim in [("PAN",True,False),("RULER",False,False),("ANGLE",False,False),
+                           ("PEN",False,False),("GRID",False,True),("CLR",False,True)]:
+        tw=d.textlength(lab,font=f(10))+14
+        d.rectangle([tx,bdy0+6,tx+tw,bdy0+28],outline=hx(p["Accent"] if active else p["Border"]),width=1)
+        d.text((tx+tw/2,bdy0+11),lab,font=f(10),fill=hx(p["Accent"] if active else (p["Faint"] if dim else p["AccentDim"])),anchor="ma")
+        tx+=tw+5
     for i,ch in enumerate(("+","−","⌖")):
         bx=CX1-30-(2-i)*30
         d.rectangle([bx,bdy0+6,bx+24,bdy0+28],outline=hx(p["Border"]),width=1)
         text(d,p,(bx+12,bdy0+11),ch,"Text" if i<2 else "TextDim",13,anchor="ma")
     # board area
     panel(d,p,[CX0,bdy0+35,CX1,bdy1],"PanelDeep","PanelDeep",0)
+    # faint cartesian GRID overlay (toggled on)
+    gun_pre=(CX0+0.20*(CX1-CX0), bdy0+35+0.82*(bdy1-bdy0-35)); gstep=2000*(0.038 if kind=="kin" else 0.0098)
+    for k in range(-24,25):
+        gx=gun_pre[0]+k*gstep
+        if CX0<gx<CX1: d.line([gx,bdy0+35,gx,bdy1],fill=hx(p["BorderSoft"]),width=1)
+        gy=gun_pre[1]+k*gstep
+        if bdy0+35<gy<bdy1: d.line([CX0,gy,CX1,gy],fill=hx(p["BorderSoft"]),width=1)
     gun=(CX0+0.20*(CX1-CX0), bdy0+35+0.82*(bdy1-bdy0-35))
     ppm=0.038 if kind=="kin" else 0.0098
     ringstep=2000 if kind=="kin" else 10000
@@ -232,6 +247,14 @@ def render(kind, data, issues, callouts, outfile):
     text(d,p,(tp[0]+10,tp[1]-2),data["tgtlabel"],"Red",8)
     text(d,p,(CX1-40,bdy0+70),"N","TextDim",9)
     d.line([CX1-36,bdy0+95,CX1-36,bdy0+62],fill=hx(p["TextDim"]),width=1)
+    # sample RULER measurement (triangulation aid)
+    ra=(gun[0]+120,gun[1]-40); rb=(gun[0]+300,gun[1]-150)
+    d.line([ra[0],ra[1],rb[0],rb[1]],fill=hx(p["Accent"]),width=1)
+    for pt in (ra,rb): d.ellipse([pt[0]-3,pt[1]-3,pt[0]+3,pt[1]+3],outline=hx(p["Accent"]),width=1)
+    distm=((rb[0]-ra[0])**2+(rb[1]-ra[1])**2)**0.5/ppm
+    import math as _m; brgm=( _m.degrees(_m.atan2(rb[0]-ra[0],-(rb[1]-ra[1]))) )%360
+    text(d,p,((ra[0]+rb[0])/2+6,(ra[1]+rb[1])/2-6),f"{distm/1000:.2f} km · {brgm:.1f}°","Text",9)
+    text(d,p,(CX0+10,bdy0+51),"RULER · click 2 points · right-click cancels","TextDim",8)
 
     # vertical plane
     vy0=H-214
@@ -247,12 +270,24 @@ def render(kind, data, issues, callouts, outfile):
     for i in range(1,5):
         gx=left+plotw*i/4
         d.line([gx,topp+6,gx,bottom],fill=hx(p["BorderSoft"]),width=1)
-    el=math.radians(data["el"]); g0=(left,bottom)
-    d.line([g0[0],g0[1],g0[0]+math.cos(el)*120,g0[1]-math.sin(el)*120],fill=hx(p["Accent"]),width=2)
-    text(d,p,(g0[0]+44,g0[1]-12),f"LAY {data['el']:.1f}°","Accent",9)
-    tgx=left+0.62*plotw; tgy=bottom-0.18*ploth
+    # altitude window with gun level (0) drawn — target may sit BELOW the gun
+    vmin,vmax,tgtalt=data["vmin"],data["vmax"],data["tgtalt"]
+    def yA(a): return bottom-(a-vmin)/(vmax-vmin)*ploth
+    gunY=yA(0); g0=(left,gunY)
+    # gun-level / horizon reference line
+    dash_line(d,(left,gunY),(left+plotw,gunY),hx(p["BorderSoft"]),1,6,5)
+    text(d,p,(left+plotw-70,gunY-12),"GUN LEVEL 0 m","Faint",8)
+    if vmin<0: text(d,p,(CX0+8,bottom-12),f"{vmin:.0f} m","Faint",8)
+    text(d,p,(CX0+8,topp+2),f"+{vmax/1000:.1f}km","Faint",8)
+    d.ellipse([g0[0]-3,g0[1]-3,g0[0]+3,g0[1]+3],outline=hx(p["Accent"]),width=2)
+    el=math.radians(data["el"])
+    d.line([g0[0],g0[1],g0[0]+math.cos(el)*110,g0[1]-math.sin(el)*110],fill=hx(p["Accent"]),width=2)
+    text(d,p,(g0[0]+40,g0[1]-14),f"LAY {data['el']:.1f}°","Accent",9)
+    tgx=left+0.62*plotw; tgy=yA(tgtalt)
+    dash_line(d,(tgx,gunY),(tgx,tgy),hx(p["Red"]),1,3,3)
     d.rectangle([tgx-5,tgy-5,tgx+5,tgy+5],outline=hx(p["Red"]),width=2)
-    text(d,p,(tgx-30,tgy-18),f"TGT {tr/1000:.1f}km","Red",8)
+    altlab=f"+{tgtalt:.0f} m" if tgtalt>=0 else f"{tgtalt:.0f} m"
+    text(d,p,(tgx-34,tgy+(22 if tgtalt<0 else -10)),f"TGT {tr/1000:.1f}km · {altlab}","Red",8)
     # last-shot side panel
     panel(d,p,[vpx1+1,vy0+29,CX1,H],"PanelDeep","BorderSoft",0)
     text(d,p,(vpx1+13,vy0+41),"LAST SHOT — OBSERVED","Faint",8)
@@ -302,6 +337,7 @@ kin = dict(
     fields=[("AZIMUTH (x) · ° · ±0.1°","335.0"),("ELEVATION (y) · ° · ±0.1°","45.0"),
             ("Z-CORR (cross) · ° · ±0.1°","0.0"),("PROPELLANT CHARGE · 1–7","5")],
     trange=7494, tbrg=335.4, aim=335.0, el=45.0, tgtlabel="TGT · ARMOR · 7.49km",
+    tgtalt=-98, vmin=-300, vmax=4000,
     calchist="570^2 * sin(2*45) / 9.817  =  33106.85",
     calcinput="sqrt(2*9.817*1240)|", hbk=" · Ballistics / Trig / Relativity",
     legendtitle="KINETIC STATION — implemented this session  (faithful reconstruction from the C# shell source)",
@@ -313,6 +349,8 @@ kin_issues=[
  (1,"HANDBOOK button opens the Core formula reference; HELP gives the tier-aware hint."),
  (1,"Input precision is stated on every field (az/el 0.1°, charge 1–7)."),
  (1,"Give-up always reveals a working solution (azimuth lead + coarse-to-fine)."),
+ (1,"Plotting board now has measurement tools: GRID, RULER (dist+bearing), PROTRACTOR, PEN."),
+ (1,"Vertical plane shows target altitude vs the gun — above OR below gun level."),
 ]
 kin_callouts=[(1,(1240,58)),(1,(1290,20)),(1,(1100,400)),(1,(1100,471))]
 
@@ -330,6 +368,7 @@ beam = dict(
     fields=[("AZIMUTH (x) · ° · ±0.1°","256.0"),("ELEVATION (y) · ° · ±0.1°","14.0"),
             ("Z-CORR (cross) · ° · ±0.1°","0.0"),("PULSE ENERGY · GJ · ±0.1","4.2")],
     trange=31063, tbrg=255.9, aim=256.0, el=14.0, tgtlabel="TGT · AIRCRAFT · 31.1km",
+    tgtalt=7400, vmin=0, vmax=12000,
     calchist="31063 / (0.94 * 299792458)  =  0.000110",
     calcinput="(2.931 - 1) * 938 * 1.602e-19|", hbk=" · Relativity / Thermal / Vectors",
     legendtitle="BEAM STATION — implemented this session  (faithful reconstruction from the C# shell source)",
@@ -340,6 +379,8 @@ beam_issues=[
  (1,"Regime panel relabelled honestly: \"β,γ FIXED · SET PULSE ENERGY\" (no false derivation)."),
  (1,"Calculator + handbook + tier-aware HELP now functional, as on the kinetic station."),
  (1,"NEW MISSION + persisted career are shared station chrome."),
+ (1,"Board measurement tools (grid/ruler/protractor/pen) on both stations."),
+ (1,"Vertical plane plots target altitude relative to the gun."),
 ]
 beam_callouts=[(1,(55,130)),(1,(170,198)),(1,(1245,278)),(1,(1100,475)),(1,(1240,58))]
 

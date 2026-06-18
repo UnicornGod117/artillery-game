@@ -197,7 +197,10 @@ public partial class KineticStation : StationView
         VPlane.AimElevation = _el;
         VPlane.TargetRange = _mission.KineticObserved!.Range;
         VPlane.TargetAltitude = _mission.KineticObserved!.Altitude;
-        VPlane.SetScale(_mission.KineticObserved!.Range * 1.25, 4000);
+        // If the target sits below the gun, open the view below the gun-level line.
+        double tAlt = _mission.KineticObserved!.Altitude;
+        double floor = tAlt < 0 ? tAlt - System.Math.Abs(tAlt) * 0.25 - 100 : 0;
+        VPlane.SetScale(_mission.KineticObserved!.Range * 1.25, 4000, floor);
     }
 
     protected override void Refresh()
@@ -227,12 +230,18 @@ public partial class KineticStation : StationView
         Board.QueueRedraw();
 
         var arc = new List<Vector2>();
+        double arcMinAlt = 0;
         foreach (var pt in r.Trajectory.Points)
+        {
             arc.Add(new Vector2((float)Math.Sqrt(pt.X * pt.X + pt.Y * pt.Y), (float)pt.Z));
+            arcMinAlt = Math.Min(arcMinAlt, pt.Z);
+        }
         VPlane.Arc = arc;
         VPlane.FiredHit = r.Score.Hit;
+        double lo = Math.Min(arcMinAlt, Math.Min(0, _mission.KineticTarget!.Altitude));
+        double floor = lo < 0 ? lo - Math.Abs(lo) * 0.1 - 50 : 0;
         VPlane.SetScale(Math.Max(_mission.KineticTarget!.Range, r.Trajectory.Impact.Range) * 1.1,
-                        Math.Max(r.Trajectory.Apex * 1.2, 500));
+                        Math.Max(r.Trajectory.Apex * 1.2, 500), floor);
         VPlane.QueueRedraw();
 
         string rng = $"{Math.Abs(r.Score.RangeError):0} m {(r.Score.RangeError > 1 ? "LONG" : r.Score.RangeError < -1 ? "SHORT" : "ON RANGE")}";
