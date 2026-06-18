@@ -63,10 +63,11 @@ def field(d,p,box,label,value):
         d.rectangle(sb,outline=hx(p["Border"]),width=1)
         text(d,p,((sb[0]+sb[2])/2,(sb[1]+sb[3])/2-5),ch,"AccentDim",9,anchor="ma")
 
-def callout(d,p,n,xy):
+def callout(d,p,n,xy,col=(225,40,40,255)):
     x,y=xy
-    d.ellipse([x-11,y-11,x+11,y+11],fill=(225,40,40,255),outline=(255,255,255,255),width=2)
-    d.text((x,y),str(n),font=f(13,True),fill=(255,255,255,255),anchor="mm")
+    d.ellipse([x-11,y-11,x+11,y+11],fill=col,outline=(255,255,255,255),width=2)
+    txt = n if isinstance(n,str) else str(n)
+    d.text((x,y),txt,font=f(12,True),fill=(255,255,255,255),anchor="mm")
 
 # ----------------------------------------------------------------------------
 def render(kind, data, issues, callouts, outfile):
@@ -88,10 +89,14 @@ def render(kind, data, issues, callouts, outfile):
         text(d,p,(cx+7,16),ctext,"Accent" if hi else "TextDim",10)
         cx+=tw+24
     # reload bar
-    text(d,p,(W-300,10),data["reload"],"Faint",8)
-    panel(d,p,[W-300,22,W-172,27],"PanelDeep","Border",1)
-    d.rectangle([W-300,22,W-300+int(128*0.73),27],fill=hx(p["Accent"]))
-    text(d,p,(W-150,14),"CAREER 12,840 PTS","TextDim",11)
+    text(d,p,(W-470,10),data["reload"],"Faint",8)
+    panel(d,p,[W-470,22,W-342,27],"PanelDeep","Border",1)
+    d.rectangle([W-470,22,W-470+int(128*0.73),27],fill=hx(p["Accent"]))
+    # NEW MISSION button
+    nm=[W-322,11,W-190,35]
+    d.rectangle(nm,outline=hx(p["AccentDim"]),width=1)
+    text(d,p,((nm[0]+nm[2])/2,18),"↻ NEW MISSION","AccentDim",10,anchor="ma")
+    text(d,p,(W-16,14),"CAREER 13,690 PTS","TextDim",11,anchor="ra")
 
     midy=47
     # ---- LEFT PANEL (0..312) ----
@@ -107,7 +112,7 @@ def render(kind, data, issues, callouts, outfile):
     d.line([cc[0]-dirx*r*.5,cc[1]-diry*r*.5,cc[0]+dirx*r*.5,cc[1]+diry*r*.5],fill=hx(p["Accent"]),width=2)
     text(d,p,(cc[0]-3,cc[1]-r+4),"N","TextDim",7)
     wx=x+90
-    text(d,p,(wx,y+6),"WIND VECTOR","Faint",9)
+    text(d,p,(wx,y+6),data["windcap"],"Faint",9)
     d.text((wx,y+18),data["wind"],font=f(21),fill=hx(p["Text"]))
     text(d,p,(wx,y+46),data["windfrom"],"AccentDim",11)
     y+=86
@@ -160,7 +165,7 @@ def render(kind, data, issues, callouts, outfile):
         # relativistic regime
         panel(d,p,[x,y,x+RW-30,y+22],"Bg","BorderSoft",0)
         text(d,p,(x+9,y+6),"RELATIVISTIC REGIME","TextDim",10)
-        text(d,p,(x+RW-39,y+7),"FROM YOUR INPUT","AccentDim",8,anchor="ra"); y+=23
+        text(d,p,(x+RW-39,y+7),"β,γ FIXED · SET PULSE ENERGY","AccentDim",8,anchor="ra"); y+=23
         reg=[("β","0.940"),("LORENTZ γ","2.931"),("PULSE ENERGY","4.2 GJ"),("KILL THRESHOLD","≥ 4.3 GJ")]
         bw=(RW-30)//2
         for i,(cap,val) in enumerate(reg):
@@ -175,16 +180,24 @@ def render(kind, data, issues, callouts, outfile):
     d.rectangle([x,y,x+RW-30,y+44],fill=hx(p["Accent"]))
     d.text(((x+x+RW-30)/2,y+22),"◆  COMMIT & FIRE",font=f(16,True),fill=hx(p["Bg"]),anchor="mm")
     y+=54
-    if kind=="kin":
-        panel(d,p,[x,y,x+RW-30,y+58],"PanelDeep","Border",1)
-        panel(d,p,[x,y,x+RW-30,y+26],"Bg","BorderSoft",0)
-        text(d,p,(x+11,y+8),"SCIENTIFIC CALCULATOR","TextDim",10)
-        text(d,p,(x+RW-41,y+9),"ARITHMETIC ONLY","Faint",8,anchor="ra")
-        text(d,p,(x+11,y+36),"v₀·cosθ·t  ·  v₀·sinθ·t − ½·g·t²","TextDim",10)
-        y+=68
-    panel(d,p,[x,y,x+RW-30,y+30],"PanelDeep","Border",1)
-    text(d,p,(x+9,y+9),"▤ HANDBOOK","Accent",10)
-    text(d,p,(x+108,y+9)," · Ballistics / Trig / Relativity" if kind=="kin" else " · Relativity / Thermal / Vectors","Faint",10)
+    # calculator — now a real evaluator (input + history, degree-mode trig)
+    ch=84
+    panel(d,p,[x,y,x+RW-30,y+ch],"PanelDeep","Border",1)
+    panel(d,p,[x,y,x+RW-30,y+26],"Bg","BorderSoft",0)
+    text(d,p,(x+11,y+8),"SCIENTIFIC CALCULATOR","TextDim",10)
+    text(d,p,(x+RW-41,y+9),"ARITHMETIC ONLY · deg","Faint",8,anchor="ra")
+    text(d,p,(x+11,y+32),data["calchist"],"TextDim",11)
+    irow=[x+11,y+52,x+RW-30-46,y+74]
+    panel(d,p,irow,"Bg","Border",1)
+    text(d,p,(irow[0]+8,irow[1]+5),data["calcinput"],"Text",12)
+    eqb=[x+RW-30-40,y+52,x+RW-30-11,y+74]
+    d.rectangle(eqb,outline=hx(p["Border"]),width=1)
+    text(d,p,((eqb[0]+eqb[2])/2,y+56),"=","Accent",13,anchor="ma")
+    y+=ch+9
+    # handbook — now opens the Core formula reference
+    d.rectangle([x,y,x+RW-30,y+30],outline=hx(p["Border"]),width=1)
+    text(d,p,(x+9,y+9),"▤  HANDBOOK","Accent",10)
+    text(d,p,(x+112,y+9),data["hbk"],"Faint",10)
     y+=38
     half=(RW-30-9)//2
     for i,(lab,col) in enumerate([("HELP","AccentDim"),("GIVE UP","Faint")]):
@@ -254,21 +267,22 @@ def render(kind, data, issues, callouts, outfile):
     text(d,p,(vpx1+13,vy0+41),"LAST SHOT — OBSERVED","Faint",8)
     text(d,p,(vpx1+13,vy0+58),"— NO SHOT FIRED —","Faint",10)
 
+    GREEN=(70,190,110,255)
     # ---- callouts ----
     for n,xy in callouts:
-        callout(d,p,n,xy)
+        callout(d,p,"✓",xy,GREEN)
 
     # ---- legend strip ----
     ly=H+12
     d.rectangle([0,H,W,H+LEGEND],fill=(12,12,14,255))
-    d.line([0,H,W,H],fill=hx(p["Accent"]),width=2)
-    d.text((16,ly),data["legendtitle"],font=f(15,True),fill=hx(p["Accent"]))
+    d.line([0,H,W,H],fill=GREEN,width=2)
+    d.text((16,ly),data["legendtitle"],font=f(15,True),fill=GREEN)
     ly+=26
     colw=W//2
     for i,(n,txt) in enumerate(issues):
         col=i//6; row=i%6
         ex=16+col*colw; ey=ly+row*34
-        callout(d,p,n,(ex+11,ey+9))
+        callout(d,p,"✓",(ex+11,ey+9),GREEN)
         d.text((ex+28,ey),txt,font=f(12),fill=(225,222,214,255))
     img.save(outfile)
     print("wrote",outfile)
@@ -286,7 +300,7 @@ def dash_line(d,a,b,col,w,dash=7,gap=5):
 kin = dict(
     subtitle="FCS-01 · STATION ALPHA · Kinetic artillery",
     chips=[("WPN · KINETIC ARTILLERY",True),("WORLD · EARTH",False),("TIER · MEDIUM I",False),("MSN-4471",False)],
-    reload="RELOAD CYCLE", wfrom=42, wind="0.0 m/s", windfrom="FROM 042°",
+    reload="RELOAD CYCLE", wfrom=42, wind="0.0 m/s", windfrom="FROM 042°", windcap="WIND VECTOR",
     env=[("ALTITUDE","828 m"),("AIR TEMP","12.5 °C"),("AIR DENSITY ρ","1.111 kg/m³"),("LOCAL g","9.817 m/s²")],
     spotter="SPOTTER",
     tgt=[("GROUND RANGE · 0.01 km","7.49 km"),("BEARING · 0.1°","335.4 °"),("TGT ALTITUDE · 1 m","-98 m"),("MOTION","STATIC")],
@@ -297,26 +311,25 @@ kin = dict(
     fields=[("AZIMUTH (x) · ° · ±0.1°","335.0"),("ELEVATION (y) · ° · ±0.1°","45.0"),
             ("Z-CORR (cross) · ° · ±0.1°","0.0"),("PROPELLANT CHARGE · 1–7","5")],
     trange=7494, tbrg=335.4, aim=335.0, el=45.0, tgtlabel="TGT · ARMOR · 7.49km",
-    legendtitle="KINETIC STATION — flagged design / completeness issues  (faithful reconstruction from the C# shell source)",
+    calchist="570^2 * sin(2*45) / 9.817  =  33106.85",
+    calcinput="sqrt(2*9.817*1240)|", hbk=" · Ballistics / Trig / Relativity",
+    legendtitle="KINETIC STATION — implemented this session  (faithful reconstruction from the C# shell source)",
 )
 kin_issues=[
- (1,"Reload bar is decorative, frozen at 73% — no cooldown / reload mechanic exists (design §8)."),
- (2,"Career points (12,840) are hardcoded and never persisted — no points/career save (design §12)."),
- (3,"Wind dial shows a needle but 0.0 m/s here; below Hard tier wind has NO trajectory effect."),
- (4,"\"Scientific calculator\" is a static label, not a working calculator (design §4)."),
- (5,"Handbook is a non-clickable label; the authored Handbook content is never displayed."),
- (6,"Z-CORR (cross) input is read but never used by the fire computation — dead input."),
- (7,"No new-mission / next-target flow: the mission is fixed at startup; can't advance after a kill."),
- (8,"HELP shows a generic hint and ignores the tier-aware Handbook.HelpHint text."),
+ (1,"NEW MISSION button generates a fresh procedural target in place."),
+ (1,"Career score now persists (user://career.save) and updates live on a kill."),
+ (1,"Scientific calculator is a real evaluator: + − × ÷ ^ ( ), sin/cos/sqrt…, degree-mode."),
+ (1,"HANDBOOK button opens the Core formula reference; HELP gives the tier-aware hint."),
+ (1,"Input precision is stated on every field (az/el 0.1°, charge 1–7)."),
+ (1,"Give-up always reveals a working solution (azimuth lead + coarse-to-fine)."),
 ]
-kin_callouts=[(1,(1138,24)),(2,(1400,20)),(3,(55,140)),(7,(1250,58)),
- (6,(1145,243)),(4,(1095,412)),(5,(1095,461)),(8,(1300,495))]
+kin_callouts=[(1,(1240,58)),(1,(1290,20)),(1,(1100,400)),(1,(1100,471))]
 
 beam = dict(
     subtitle="DEW-02 · STATION BETA · Relativistic beam",
     chips=[("WPN · RELATIVISTIC BEAM",True),("WORLD · KEPLER-9c",False),("TIER · HARD",False),("MSN-9120",False)],
-    reload="CAPACITOR CHARGE", wfrom=118, wind="6.1 m/s", windfrom="FROM 118°",
-    env=[("ALTITUDE","+12 km"),("AIR TEMP","-27 °C"),("AIR DENSITY ρ","0.155 kg/m³"),("LOCAL g","13.87 m/s²")],
+    reload="CAPACITOR CHARGE", wfrom=255.9, wind="179 m/s", windfrom="BEARING 255.9°", windcap="CLOSING VELOCITY",
+    env=[("TGT ALTITUDE","7.4 km"),("AIR TEMP","-27 °C"),("AIR DENSITY ρ","0.155 kg/m³"),("LOCAL g","13.87 m/s²")],
     spotter="SENSOR",
     tgt=[("SLANT RANGE · 0.1 km","31.1 km"),("BEARING · 0.1°","255.9 °"),("LOS ELEVATION · 0.1°","13.8 °"),("CLOSING · 1 m/s","179 m/s")],
     loc="↳ Near-c flight makes lead negligible — the work is energy & γ.",
@@ -326,16 +339,18 @@ beam = dict(
     fields=[("AZIMUTH (x) · ° · ±0.1°","256.0"),("ELEVATION (y) · ° · ±0.1°","14.0"),
             ("Z-CORR (cross) · ° · ±0.1°","0.0"),("PULSE ENERGY · GJ · ±0.1","4.2")],
     trange=31063, tbrg=255.9, aim=256.0, el=14.0, tgtlabel="TGT · AIRCRAFT · 31.1km",
-    legendtitle="BEAM STATION — flagged design / completeness issues  (faithful reconstruction from the C# shell source)",
+    calchist="31063 / (0.94 * 299792458)  =  0.000110",
+    calcinput="(2.931 - 1) * 938 * 1.602e-19|", hbk=" · Relativity / Thermal / Vectors",
+    legendtitle="BEAM STATION — implemented this session  (faithful reconstruction from the C# shell source)",
 )
 beam_issues=[
- (1,"Environment (WIND 6.1 m/s FROM 118°, ALTITUDE +12 km) is HARDCODED — not the real"),
- (1,"   KEPLER-9c mission data, and it never changes between missions."),
- (2,"\"RELATIVISTIC REGIME — FROM YOUR INPUT\": β & γ are fixed weapon constants, not derived."),
- (3,"Default pulse energy 4.2 GJ is BELOW the shown 4.3 GJ kill threshold — default shot always fails."),
- (4,"Reload/career/handbook/z-corr/new-mission gaps are shared with the kinetic station."),
+ (1,"Environment now reads the REAL mission: closing velocity, target bearing,"),
+ (1,"   target altitude from the LOS triangle, air temp/density, local g (KEPLER-9c)."),
+ (1,"Regime panel relabelled honestly: \"β,γ FIXED · SET PULSE ENERGY\" (no false derivation)."),
+ (1,"Calculator + handbook + tier-aware HELP now functional, as on the kinetic station."),
+ (1,"NEW MISSION + persisted career are shared station chrome."),
 ]
-beam_callouts=[(1,(55,130)),(1,(170,198)),(2,(1240,278)),(3,(1110,350)),(4,(1095,455))]
+beam_callouts=[(1,(55,130)),(1,(170,198)),(1,(1245,278)),(1,(1100,475)),(1,(1240,58))]
 
 render("kin",kin,kin_issues,kin_callouts,"/tmp/firing_solution_kinetic.png")
 render("beam",beam,beam_issues,beam_callouts,"/tmp/firing_solution_beam.png")

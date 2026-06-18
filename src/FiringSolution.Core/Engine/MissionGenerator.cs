@@ -24,9 +24,10 @@ public static class MissionGenerator
     }
 
     private static TierFlags FlagsFor(int tierIdx) => new(
-        Drag: tierIdx >= 3,       // Hard: quadratic drag
-        VariableG: tierIdx >= 1,  // Medium I+: g(h)
-        Wind: tierIdx >= 2);      // Medium II+: meaningful wind
+        Drag: tierIdx >= 2,            // Medium II+: drag — this is what makes crosswind bite
+        VariableG: tierIdx >= 1,       // Medium I+: g(h)
+        Wind: tierIdx >= 2,            // Medium II+: meaningful wind / crosswind lead
+        VariableDensity: tierIdx >= 3);// Hard: ρ(h) varies along the arc and couples to g(h)
 
     private static Mission GenerateKinetic(DifficultySliders s, Rng rng, int seed)
     {

@@ -49,11 +49,10 @@ public class KineticGiveUpTests
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
-    [InlineData(2)]
-    public void GiveUp_FindsASolution_AtLowerTiers(int tier)
+    public void GiveUp_FindsASolution_AtDragFreeTiers(int tier)
     {
         // Give up is a graceful exit: the Core's reveal must always surface a working
-        // solution. Tiers 0–2 are drag-free, so a wider seed sweep is cheap.
+        // solution. Tiers 0–1 are drag-free, so a wider seed sweep is cheap.
         for (int seed = 0; seed < 6; seed++)
         {
             var m = GameEngine.GenerateMission(new DifficultySliders(
@@ -67,17 +66,39 @@ public class KineticGiveUpTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    public void GiveUp_FindsASolution_AtHardTier(int seed)
+    [InlineData(2, 0)]  // Medium II — drag + crosswind
+    [InlineData(2, 1)]
+    [InlineData(3, 0)]  // Hard — drag + ρ(h)
+    [InlineData(3, 1)]
+    public void GiveUp_FindsASolution_AtDragTiers(int tier, int seed)
     {
-        // Hard tier integrates drag (expensive), so keep this to a couple of seeds.
+        // Drag tiers integrate the RK4 trajectory (expensive), so keep to a few seeds.
         var m = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Kinetic, MathFidelity: 3, Circumstance: 0.8, Seed: seed));
+            WeaponKind.Kinetic, MathFidelity: tier, Circumstance: 0.8, Seed: seed));
         var reveal = GameEngine.RevealKineticSolution(m);
         Assert.NotNull(reveal);
         var r = GameEngine.FireKinetic(m, reveal!.Value.Azimuth, reveal.Value.Elevation, reveal.Value.Charge);
-        Assert.True(r.Score.Hit, $"revealed Hard-tier solution must hit (seed {seed}).");
+        Assert.True(r.Score.Hit, $"revealed solution must hit (tier {tier} seed {seed}).");
+    }
+
+    [Fact]
+    public void MediumII_Wind_MateriallyDeflectsTheImpact()
+    {
+        // Item 5: at Medium II, drag is on so wind genuinely couples — the same shot
+        // must land in a different place with the wind present vs zeroed. (Below this
+        // tier a drag-free round is physically unaffected by wind.)
+        var m = GameEngine.GenerateMission(new DifficultySliders(
+            WeaponKind.Kinetic, MathFidelity: 2, Circumstance: 0.8, Seed: 3));
+        Assert.True(m.Flags.Drag);
+        Assert.False(m.Flags.VariableDensity);            // steady density at Medium II
+        Assert.True(m.Environment!.Wind.Magnitude > 0);
+
+        var sol = new KineticSolution(m.KineticTarget!.Bearing, 40, m.KineticWeapon!.MuzzleVelocity(6));
+        var windy = Engine.Ballistics.SimulateKinetic(m.KineticWeapon!, m.Environment!, sol, m.Flags);
+        var still = Engine.Ballistics.SimulateKinetic(
+            m.KineticWeapon!, m.Environment! with { Wind = Vec3.Zero }, sol, m.Flags);
+        double shift = (windy.Impact.Position - still.Impact.Position).MagnitudeXY;
+        Assert.True(shift > 25, $"wind should move the impact meaningfully (was {shift:0} m).");
     }
 
     [Fact]

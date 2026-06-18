@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using FiringSolution.Core;
 using FiringSolution.Core.Models;
+using FiringSolution.Core.Content;
 
 namespace FiringSolution.Shell;
 
@@ -13,6 +14,7 @@ namespace FiringSolution.Shell;
 /// </summary>
 public partial class KineticStation : StationView
 {
+    private static int _seedSeq = 4471;   // advances each new mission
     private Mission _mission = null!;
     private double _az, _el = 45, _zc = 0;
     private int _charge = 5;
@@ -27,7 +29,7 @@ public partial class KineticStation : StationView
     {
         // Mission is needed for chip text — generate it up front.
         _mission = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Kinetic, MathFidelity: 1, Triangulation: 0.3, Circumstance: 0.3, Seed: 4471));
+            WeaponKind.Kinetic, MathFidelity: 1, Triangulation: 0.3, Circumstance: 0.3, Seed: _seedSeq++));
         _az = Math.Round(_mission.KineticObserved!.Bearing);
 
         return MakeTopBar(
@@ -153,30 +155,12 @@ public partial class KineticStation : StationView
         v.AddChild(fire);
 
         // Calculator (arithmetic only — honour-system boundary, design §4).
-        var calc = Ui.Panel(P.PanelDeep, P.Border, pad: 0, borderW: 1);
-        var cv = new VBoxContainer();
-        var calcHead = Ui.Panel(P.Bg, P.BorderSoft, pad: 9, borderW: 0);
-        var chh = new HBoxContainer();
-        chh.AddChild(Ui.Text("SCIENTIFIC CALCULATOR", P.TextDim, 10));
-        chh.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        chh.AddChild(Ui.Text("ARITHMETIC ONLY", P.Faint, 8));
-        calcHead.AddChild(chh);
-        cv.AddChild(calcHead);
-        var calcBody = new MarginContainer();
-        calcBody.AddThemeConstantOverride("margin_left", 11);
-        calcBody.AddThemeConstantOverride("margin_top", 9);
-        calcBody.AddThemeConstantOverride("margin_bottom", 9);
-        calcBody.AddChild(Ui.Text("v₀·cosθ·t  ·  v₀·sinθ·t − ½·g·t²", P.TextDim, 10));
-        cv.AddChild(calcBody);
-        calc.AddChild(cv);
-        v.AddChild(calc);
+        v.AddChild(Calculator.Build(P));
 
-        // Handbook + Help / Give up.
-        var hbk = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
-        var hbr = new HBoxContainer();
-        hbr.AddChild(Ui.Text("▤ HANDBOOK", P.Accent, 10));
-        hbr.AddChild(Ui.Text(" · Ballistics / Trig / Relativity", P.Faint, 10));
-        hbk.AddChild(hbr);
+        // Handbook (opens the Core's formula reference) + Help / Give up.
+        var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Ballistics / Trig / Relativity", P.Accent, P.Border, 10);
+        hbk.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        hbk.Pressed += () => HandbookView.Open(this, P, Handbook.HelpHint(_mission.TierName));
         v.AddChild(hbk);
 
         var actions = new HBoxContainer();
@@ -185,9 +169,9 @@ public partial class KineticStation : StationView
         help.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         var give = Ui.FlatButton(P, "GIVE UP", P.Faint, P.Border, 10);
         give.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        help.Pressed += () => SetLastShot("HELP", P.AccentDim,
+        help.Pressed += () => SetLastShot("HELP — WHICH EQUATIONS APPLY", P.AccentDim,
             Array.Empty<(string, string, Color)>(),
-            "Vacuum→drag ladder: triangulate range, then R = v₀²·sin(2θ)/g; correct for g(h).");
+            Handbook.HelpHint(_mission.TierName));
         give.Pressed += RevealSolution;
         actions.AddChild(help);
         actions.AddChild(give);
@@ -251,7 +235,7 @@ public partial class KineticStation : StationView
         string rng = $"{Math.Abs(r.Score.RangeError):0} m {(r.Score.RangeError > 1 ? "LONG" : r.Score.RangeError < -1 ? "SHORT" : "ON RANGE")}";
         string line = $"{Math.Abs(r.Score.LineError):0} m {(r.Score.LineError > 1 ? "LEFT" : r.Score.LineError < -1 ? "RIGHT" : "ON LINE")}";
         Color acc = r.Score.Hit ? P.Accent : P.Red;
-        if (r.Score.Hit) Career += 850;
+        if (r.Score.Hit) AwardCareer(850);
 
         SetLastShot(
             r.Score.Hit ? "◆ TARGET DESTROYED" : "△ CALIBRATION SHOT", acc,

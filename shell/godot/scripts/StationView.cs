@@ -14,9 +14,9 @@ public abstract partial class StationView : Control
     protected PlottingBoard Board = null!;
     protected VerticalPlane VPlane = null!;
     protected VBoxContainer LastShot = null!;
+    protected Label CareerLabel = null!;
 
     protected int ShotNo = 0;
-    protected int Career = 12840;
 
     public override void _Ready()
     {
@@ -107,8 +107,20 @@ public abstract partial class StationView : Control
         reloadBox.AddChild(pb);
         h.AddChild(reloadBox);
 
-        h.AddChild(Ui.Text($"CAREER {Career:N0} PTS", P.TextDim, 11));
+        var newMission = Ui.FlatButton(P, "↻ NEW MISSION", P.AccentDim, P.Border, 10);
+        newMission.Pressed += () => (GetParent() as Main)?.ReloadStation();
+        h.AddChild(newMission);
+
+        CareerLabel = Ui.Text($"CAREER {Career.Points:N0} PTS", P.TextDim, 11);
+        h.AddChild(CareerLabel);
         return bar;
+    }
+
+    /// <summary>Award career points, persist them, and refresh the top-bar readout.</summary>
+    protected void AwardCareer(int points)
+    {
+        Career.Add(points);
+        CareerLabel.Text = $"CAREER {Career.Points:N0} PTS";
     }
 
     private Control BuildBoardSection()

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FiringSolution.Core;
 using FiringSolution.Core.Models;
 using FiringSolution.Core.Engine;
+using FiringSolution.Core.Content;
 
 namespace FiringSolution.Shell;
 
@@ -14,6 +15,7 @@ namespace FiringSolution.Shell;
 /// </summary>
 public partial class BeamStation : StationView
 {
+    private static int _seedSeq = 9120;   // advances each new mission
     private Mission _mission = null!;
     private double _az, _el, _zc = 0, _en = 4.2; // pulse energy, GJ
 
@@ -24,7 +26,7 @@ public partial class BeamStation : StationView
     protected override Control BuildTopBar()
     {
         _mission = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Beam, MathFidelity: 3, Triangulation: 0.25, Circumstance: 0.6, Seed: 9120));
+            WeaponKind.Beam, MathFidelity: 3, Triangulation: 0.25, Circumstance: 0.6, Seed: _seedSeq++));
         _az = Math.Round(_mission.BeamObserved!.Bearing);
         _el = Math.Round(_mission.BeamObserved!.LosElevation);
 
@@ -48,20 +50,24 @@ public partial class BeamStation : StationView
         panel.AddChild(v);
         var o = _mission.BeamObserved!;
 
+        // Real mission geometry: engagement altitude from the line-of-sight triangle.
+        double losRad = Constants.DegToRad(o.LosElevation);
+        double tgtAltKm = o.SlantRange * Math.Sin(losRad) / 1000.0;
+
         v.AddChild(Ui.SectionHeader(P, "Environment", P.Accent, "MEASURED"));
         var windRow = new HBoxContainer();
         windRow.AddThemeConstantOverride("separation", 14);
-        windRow.AddChild(new Compass { P = P, FromDeg = 118 });
+        windRow.AddChild(new Compass { P = P, FromDeg = o.Bearing });
         var wc = new VBoxContainer();
         wc.AddThemeConstantOverride("separation", 2);
-        wc.AddChild(Ui.Text("WIND VECTOR", P.Faint, 9));
-        wc.AddChild(Ui.Text("6.1 m/s", P.Text, 21));
-        wc.AddChild(Ui.Text("FROM 118°", P.AccentDim, 11));
+        wc.AddChild(Ui.Text("CLOSING VELOCITY", P.Faint, 9));
+        wc.AddChild(Ui.Text($"{o.Closing:0} m/s", P.Text, 21));
+        wc.AddChild(Ui.Text($"BEARING {o.Bearing:000.0}°", P.AccentDim, 11));
         windRow.AddChild(wc);
         v.AddChild(windRow);
         v.AddChild(MetricGrid(new[]
         {
-            ("ALTITUDE", "+12 km"),
+            ("TGT ALTITUDE", $"{tgtAltKm:0.0} km"),
             ("AIR TEMP", $"{o.AirTemp:0} °C"),
             ("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"),
             ("LOCAL g", $"{o.LocalG:0.00} m/s²"),
@@ -131,7 +137,7 @@ public partial class BeamStation : StationView
         var rhr = new HBoxContainer();
         rhr.AddChild(Ui.Text("RELATIVISTIC REGIME", P.TextDim, 10));
         rhr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        rhr.AddChild(Ui.Text("FROM YOUR INPUT", P.AccentDim, 8));
+        rhr.AddChild(Ui.Text("β,γ FIXED · SET PULSE ENERGY", P.AccentDim, 8));
         rh.AddChild(rhr);
         rv.AddChild(rh);
         var rg = new GridContainer { Columns = 2 };
@@ -150,12 +156,13 @@ public partial class BeamStation : StationView
         reg.AddChild(rv);
         v.AddChild(reg);
 
-        // Handbook + Help / Give up.
-        var hbk = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
-        var hbr = new HBoxContainer();
-        hbr.AddChild(Ui.Text("▤ HANDBOOK", P.Accent, 10));
-        hbr.AddChild(Ui.Text(" · Relativity / Thermal / Vectors", P.Faint, 10));
-        hbk.AddChild(hbr);
+        // Calculator (arithmetic only — honour-system boundary, design §4).
+        v.AddChild(Calculator.Build(P));
+
+        // Handbook (opens the Core's formula reference) + Help / Give up.
+        var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Relativity / Thermal / Vectors", P.Accent, P.Border, 10);
+        hbk.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        hbk.Pressed += () => HandbookView.Open(this, P, Handbook.HelpHint("beam"));
         v.AddChild(hbk);
 
         var actions = new HBoxContainer();
@@ -164,8 +171,8 @@ public partial class BeamStation : StationView
         help.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         var give = Ui.FlatButton(P, "GIVE UP", P.Faint, P.Border, 10);
         give.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        help.Pressed += () => SetLastShot("HELP", P.AccentDim, Array.Empty<(string, string, Color)>(),
-            "Lead ≈ 0. Point on LOS bearing/elevation; deliver E ≥ kill threshold via (γ−1)m₀c².");
+        help.Pressed += () => SetLastShot("HELP — WHICH EQUATIONS APPLY", P.AccentDim,
+            Array.Empty<(string, string, Color)>(), Handbook.HelpHint("beam"));
         give.Pressed += RevealSolution;
         actions.AddChild(help);
         actions.AddChild(give);
@@ -222,7 +229,7 @@ public partial class BeamStation : StationView
         VPlane.QueueRedraw();
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
-        if (r.Score.Hit) Career += 1100;
+        if (r.Score.Hit) AwardCareer(1100);
         string heading = r.Score.Hit ? "◆ TARGET NEUTRALISED" : (r.Score.OnAxis ? "△ UNDER-POWERED" : "△ OFF-AXIS");
         SetLastShot(heading, acc,
             new[]

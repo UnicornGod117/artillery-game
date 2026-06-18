@@ -50,12 +50,16 @@ KineticResult r = GameEngine.FireKinetic(m, azimuth: 41.7, elevation: 38.0, char
 
 ## Physics scope (design §7)
 
-| Tier      | Gravity | Drag | Wind | Notes                                  |
-|-----------|---------|------|------|----------------------------------------|
-| Easy      | const g | —    | —    | vacuum parabola                        |
-| Medium I  | g(h)    | —    | —    | full SUVAT, altitude-dependent gravity |
-| Medium II | g(h)    | —    | yes  | 3D crosswind, lead                     |
-| Hard      | g(h)    | yes  | yes  | quadratic drag — non-analytic, RK4     |
+| Tier      | Gravity | Drag             | Wind | Notes                                          |
+|-----------|---------|------------------|------|------------------------------------------------|
+| Easy      | const g | —                | —    | vacuum parabola, flat ground                   |
+| Medium I  | g(h)    | —                | —    | full SUVAT, altitude-dependent gravity, drop   |
+| Medium II | g(h)    | yes (steady ρ)   | yes  | drag couples 3D crosswind → genuine lead       |
+| Hard      | g(h)    | yes (ρ(h))       | yes  | altitude-varying density couples drag↔g; RK4   |
+
+At **Medium II** the air density is held at the gun-site value, so drag is steady and
+the crosswind deflection is solvable per-axis. **Hard** lets density vary along the arc
+(`ρ(h)`), coupling drag to altitude and gravity — the genuinely non-analytic regime.
 
 The relativistic beam is energy/γ-led (lead ≈ 0 at near-c), scored on two
 independent gates: pointing accuracy **and** delivered pulse energy ≥ kill
@@ -135,12 +139,22 @@ the shell is intentionally kept out of `FiringSolution.sln` — that keeps root
 - **Input precision is now stated** on every firing-solution field and on the
   observed readouts (azimuth/elevation to 0.1°, range to 0.01 km, etc.).
 
-### Known gaps in the shell (see `docs/mockups/`)
+### Shell feature status (see `docs/mockups/`)
 
-The instrument *chrome* is complete and the fire→score→observe loop is wired, but
-several instruments are still decorative placeholders: the reload bar, career
-score (not persisted), the scientific calculator, the handbook viewer, the
-Z-correction input (read but unused), and there is no "next mission" flow. The
-beam station also hard-codes its environment readouts instead of reading the
-mission. Annotated reconstructions of both stations are in
+The fire→score→observe loop is wired, and these instruments are now functional:
+
+- **Scientific calculator** — a real recursive-descent evaluator (`Calculator.cs`):
+  `+ − × ÷ ^ ( )`, `sin/cos/tan/asin/acos/atan/sqrt/ln/log/exp/abs`, `pi`/`e`,
+  scientific notation, with degree-mode trig to match the game's angle convention.
+- **Handbook** (`HandbookView.cs`) — an overlay rendering the Core's formula
+  reference, with the tier-aware `Handbook.HelpHint` banner; **HELP** uses the same.
+- **NEW MISSION** — regenerates a fresh procedural mission in place.
+- **Career score** (`Career.cs`) — persisted to `user://career.save`, updated live.
+- **Beam environment** — now read from the real mission (closing velocity, target
+  bearing, LOS-derived altitude, air data, local g) instead of hard-coded values.
+- **Stated input precision** on every field and observed readout.
+
+Still placeholder: the **reload/cooldown** bar (no throttling mechanic yet) and the
+**Z-correction** input (reserved for higher breadth tiers per design §5, not used by
+the current planar solve). Reconstructions of both stations are in
 [`docs/mockups/`](docs/mockups/).
