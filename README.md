@@ -38,10 +38,14 @@ elevation / charge by hand and commits; the engine obeys the physics and stamps
 the real impact. A miss is calibration data, not failure.
 
 **No predicted paths (design pillar 2).** The program never forecasts where a round
-will go. The plotting-board aim line is a bearing pointer (`BRG`) and the vertical
-view's barrel stub is a lay angle (`LAY`) — both only echo your inputs. A trajectory
-is drawn *only after* you commit, and it is the real one the oracle integrated. The
-calculator is arithmetic-only and holds no physics, so it cannot predict either.
+will go. The only two pre-fire indicators are deliberately **short, fixed-length
+stubs out of the gun** that just echo your inputs: a `BRG` heading tick (azimuth) on
+the plotting board and a `LAY` barrel stub (elevation) on the vertical view. Both are
+far too short to reach the target, so they can't show alignment or whether a shot
+would land — you lay the gun by reading the numeric bearing against the target's
+measured bearing. A trajectory is drawn *only after* you commit, and it is the real
+one the oracle integrated. The calculator is arithmetic-only and holds no physics, so
+it cannot predict either.
 
 ### Public API (what the shell calls)
 

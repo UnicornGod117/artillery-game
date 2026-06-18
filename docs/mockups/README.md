@@ -21,10 +21,11 @@ digits, `+ − × ÷ ^ ( )`, `sin/cos/tan/asin/acos/atan/√/ln/log/exp/π/e`, `
 `⌫`, `=`, with degree-mode trig and a short history. It is arithmetic-only and holds
 no physics, so it cannot predict a path or compute a firing solution.
 
-**No predicted paths:** the simulation views never forecast a trajectory. The aim
-line is a bearing pointer (`BRG`) and the barrel stub is a lay-angle (`LAY`) — both
-just echo your inputs. A path is drawn only *after* you commit, and it is the real
-arc the oracle simulated.
+**No predicted paths:** the simulation views never forecast a trajectory. The two
+pre-fire indicators are short, fixed-length stubs out of the gun — a `BRG` heading
+tick (azimuth) and a `LAY` barrel stub (elevation) — far too short to reach the
+target, so they only echo your inputs and can't show alignment or a hit. A path is
+drawn only *after* you commit, and it is the real arc the oracle simulated.
 
 The green ✓ callouts and the legend strip enumerate what was **implemented this
 session**: the working scientific calculator, the handbook overlay + tier-aware
