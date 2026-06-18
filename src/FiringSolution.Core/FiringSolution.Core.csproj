@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ======================================================================
+       FIRING SOLUTION — Core (the oracle)
+       A pure C# class library: deterministic, fully unit-testable, with zero
+       presentation dependencies (design doc §13). The shell merely consumes it.
+       ====================================================================== -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>FiringSolution.Core</RootNamespace>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+; Engine configuration file.
+; FIRING SOLUTION — Godot 4 shell (design §13 recommended shell).
+; The UI is built programmatically in C# so everything stays in C# and the
+; physics Core (FiringSolution.Core) is consumed through its public API only.
+
+config_version=5
+
+[application]
+
+config/name="Firing Solution"
+config/description="Single-seat fire-control simulator. You do the math; the world is the answer key."
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.3", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[dotnet]
+
+project/assembly_name="FiringSolution.Shell"
+
+[display]
+
+window/size/viewport_width=1440
+window/size/viewport_height=884
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.11, 0.094, 0.071, 1)
