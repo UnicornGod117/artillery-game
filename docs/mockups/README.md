@@ -11,11 +11,12 @@ sub-pixel spacing will differ from the live engine.
 
 | | |
 |---|---|
-| `firing_solution_kinetic.png` | Direction A — amber kinetic gunnery, with numbered callouts |
-| `firing_solution_beam.png` | Direction B — ice-blue relativistic beam, with numbered callouts |
+| `firing_solution_kinetic.png` | Direction A — amber kinetic gunnery |
+| `firing_solution_beam.png` | Direction B — ice-blue relativistic beam |
 | `render_ui.py` | the renderer (Pillow); regenerate with `python3 render_ui.py` |
 
-The red callouts flag completeness / design issues — non-functional placeholders
-(reload bar, calculator, handbook), a dead Z-correction input, the hard-coded beam
-environment, the un-persisted career score, and the missing "next mission" flow.
-See the legend strip at the bottom of each image.
+The green ✓ callouts and the legend strip enumerate what was **implemented this
+session**: the working scientific calculator, the handbook overlay + tier-aware
+HELP, the **NEW MISSION** flow, the persisted career score, stated input
+precision, and — on the beam station — environment readouts driven by the real
+mission plus an honestly-labelled relativistic-regime panel.
