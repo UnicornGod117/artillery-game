@@ -7,7 +7,8 @@ math; the world is the answer key.*
 See [`firing-solution-design-doc.md`](firing-solution-design-doc.md) for the full
 design and [`Firing Solution - Vision.dc.html`](Firing%20Solution%20-%20Vision.dc.html)
 for the interactive visual study (two station "directions": amber kinetic and
-ice-blue relativistic beam).
+ice-blue relativistic beam). Planned expansions — including the **timed beam intercept**
+relativistic time-of-flight puzzle — are tracked in [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Architecture
 
