@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 namespace FiringSolution.Shell;
 
@@ -14,9 +15,19 @@ public abstract partial class StationView : Control
     protected PlottingBoard Board = null!;
     protected VerticalPlane VPlane = null!;
     protected VBoxContainer LastShot = null!;
+    protected Label CareerLabel = null!;
 
     protected int ShotNo = 0;
-    protected int Career = 12840;
+
+    private Dictionary<PlottingBoard.Tool, Button> _toolButtons = new();
+
+    /// <summary>Activate a board tool and highlight its toolbar button.</summary>
+    private void SelectTool(PlottingBoard.Tool t)
+    {
+        Board.SetTool(t);
+        foreach (var (kind, btn) in _toolButtons)
+            btn.AddThemeColorOverride("font_color", kind == t ? P.Accent : P.AccentDim);
+    }
 
     public override void _Ready()
     {
@@ -107,8 +118,20 @@ public abstract partial class StationView : Control
         reloadBox.AddChild(pb);
         h.AddChild(reloadBox);
 
-        h.AddChild(Ui.Text($"CAREER {Career:N0} PTS", P.TextDim, 11));
+        var newMission = Ui.FlatButton(P, "↻ NEW MISSION", P.AccentDim, P.Border, 10);
+        newMission.Pressed += () => (GetParent() as Main)?.ReloadStation();
+        h.AddChild(newMission);
+
+        CareerLabel = Ui.Text($"CAREER {Career.Points:N0} PTS", P.TextDim, 11);
+        h.AddChild(CareerLabel);
         return bar;
+    }
+
+    /// <summary>Award career points, persist them, and refresh the top-bar readout.</summary>
+    protected void AwardCareer(int points)
+    {
+        Career.Add(points);
+        CareerLabel.Text = $"CAREER {Career.Points:N0} PTS";
     }
 
     private Control BuildBoardSection()
@@ -123,6 +146,30 @@ public abstract partial class StationView : Control
         hb.AddChild(new ColorRect { Color = P.Accent, CustomMinimumSize = new Vector2(5, 5), SizeFlagsVertical = SizeFlags.ShrinkCenter });
         hb.AddChild(Ui.Text("PLOTTING BOARD", P.Text, 12));
         hb.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+
+        // Measurement toolbar (design §4): pan · ruler · protractor · pen · grid · clear.
+        Board = new PlottingBoard { P = P };
+        var tools = new List<Button>();
+        Button Tool(string label, System.Action onPress, bool dim = false)
+        {
+            var b = Ui.FlatButton(P, label, dim ? P.Faint : P.AccentDim, P.Border, 10);
+            b.Pressed += () => onPress();
+            tools.Add(b);
+            hb.AddChild(b);
+            return b;
+        }
+        var bPan = Tool("PAN", () => SelectTool(PlottingBoard.Tool.Pan));
+        var bRuler = Tool("RULER", () => SelectTool(PlottingBoard.Tool.Ruler));
+        var bAngle = Tool("ANGLE", () => SelectTool(PlottingBoard.Tool.Protractor));
+        var bPen = Tool("PEN", () => SelectTool(PlottingBoard.Tool.Pen));
+        _toolButtons = new() {
+            [PlottingBoard.Tool.Pan] = bPan, [PlottingBoard.Tool.Ruler] = bRuler,
+            [PlottingBoard.Tool.Protractor] = bAngle, [PlottingBoard.Tool.Pen] = bPen,
+        };
+        Tool("GRID", () => { Board.ToggleGrid(); }, dim: true);
+        Tool("CLR", () => Board.ClearMeasurements(), dim: true);
+        hb.AddChild(new Control { CustomMinimumSize = new Vector2(8, 0) });
+
         var zin = Ui.FlatButton(P, "+", P.Text, P.Border, 13);
         var zout = Ui.FlatButton(P, "−", P.Text, P.Border, 13);
         var zr = Ui.FlatButton(P, "⌖", P.TextDim, P.Border, 11);
@@ -130,10 +177,10 @@ public abstract partial class StationView : Control
         header.AddChild(hb);
         v.AddChild(header);
 
-        Board = new PlottingBoard { P = P };
         Board.SizeFlagsVertical = SizeFlags.ExpandFill;
         Board.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         v.AddChild(Board);
+        SelectTool(PlottingBoard.Tool.Pan);
 
         zin.Pressed += () => Board.ZoomBy(1.25f);
         zout.Pressed += () => Board.ZoomBy(0.8f);

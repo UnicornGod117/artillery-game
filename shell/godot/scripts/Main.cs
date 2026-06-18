@@ -45,6 +45,9 @@ public partial class Main : Control
 
     private void Toggle() { _beam = !_beam; Swap(); }
 
+    /// <summary>Rebuild the current station in place — generates a fresh mission.</summary>
+    public void ReloadStation() => Swap();
+
     private void Swap()
     {
         _station?.QueueFree();
