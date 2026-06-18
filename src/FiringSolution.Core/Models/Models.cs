@@ -51,5 +51,12 @@ public sealed record EnvironmentSpec(
 /// <summary>The kinematic solution the player commits for a kinetic shot.</summary>
 public readonly record struct KineticSolution(double Azimuth, double Elevation, double Speed);
 
-/// <summary>Which physics the oracle integrates (gated by mission tier, §7).</summary>
-public readonly record struct TierFlags(bool Drag, bool VariableG, bool Wind);
+/// <summary>
+/// Which physics the oracle integrates (gated by mission tier, §7).
+///   Drag            — aerodynamic drag is modelled (this is what couples WIND in).
+///   VariableG       — g(h) = GM/(R+h)² instead of a constant g.
+///   Wind            — a non-zero air velocity is present.
+///   VariableDensity — ρ varies with altitude along the arc (ρ(h)); when false the
+///                     air density is held at the gun-site value, so drag is steady.
+/// </summary>
+public readonly record struct TierFlags(bool Drag, bool VariableG, bool Wind, bool VariableDensity = false);

@@ -89,7 +89,11 @@ public static class Ballistics
 
         if (tier.Drag && env.World.SeaLevelDensity > 0)
         {
-            double rho = Atmosphere.DensityAt(env.World, h);
+            // Medium II holds density at the gun-site value (steady drag the player can
+            // solve per-axis); Hard lets ρ vary with altitude (ρ(h)), coupling drag to g(h).
+            double rho = tier.VariableDensity
+                ? Atmosphere.DensityAt(env.World, h)
+                : Atmosphere.DensityAt(env.World, env.SiteAltitude);
             Vec3 vrel = vel - env.Wind; // air-relative velocity
             double speed = vrel.Magnitude;
             if (speed > 0)

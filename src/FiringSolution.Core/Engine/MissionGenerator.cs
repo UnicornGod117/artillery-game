@@ -24,9 +24,10 @@ public static class MissionGenerator
     }
 
     private static TierFlags FlagsFor(int tierIdx) => new(
-        Drag: tierIdx >= 3,       // Hard: quadratic drag
-        VariableG: tierIdx >= 1,  // Medium I+: g(h)
-        Wind: tierIdx >= 2);      // Medium II+: meaningful wind
+        Drag: tierIdx >= 2,            // Medium II+: drag — this is what makes crosswind bite
+        VariableG: tierIdx >= 1,       // Medium I+: g(h)
+        Wind: tierIdx >= 2,            // Medium II+: meaningful wind / crosswind lead
+        VariableDensity: tierIdx >= 3);// Hard: ρ(h) varies along the arc and couples to g(h)
 
     private static Mission GenerateKinetic(DifficultySliders s, Rng rng, int seed)
     {
@@ -90,7 +91,12 @@ public static class MissionGenerator
         double slantRange = Math.Round(rng.Lerp(18000, 46000));
         double bearing = Math.Round(rng.Lerp(0, 360) * 10) / 10;
         double losElevation = Math.Round(rng.Lerp(4, 18) * 10) / 10;
-        double killEnergy = rng.Lerp(2.5, 4.5) * 1e9 * (1 + 0.25 * s.Circumstance);
+        // Kill threshold is a published spec the instrument reads out exactly, not a
+        // noisy measurement — so snap the TRUTH to the displayed 0.1 GJ grid. Otherwise
+        // the readout rounds below the true gate and a player who delivers exactly the
+        // shown energy fails the strict (E ≥ kill) test through no fault of their own.
+        double killEnergyGJ = Math.Round(rng.Lerp(2.5, 4.5) * (1 + 0.25 * s.Circumstance) * 10) / 10;
+        double killEnergy = killEnergyGJ * 1e9;
 
         var target = new BeamTarget(slantRange, bearing, losElevation, killEnergy);
 
@@ -103,7 +109,7 @@ public static class MissionGenerator
             AirTemp: Math.Round(rng.Lerp(-60, -10)),
             AirDensity: Math.Round(Atmosphere.DensityAt(world, 12000) * 1000) / 1000,
             LocalG: Math.Round(Atmosphere.SurfaceGravity(world, 12000) * 100) / 100,
-            KillEnergyGJ: Math.Round(killEnergy / 1e9 * 10) / 10);
+            KillEnergyGJ: killEnergyGJ);
 
         return new Mission(
             Id: "MSN-" + ((uint)seed % 10000).ToString("D4"),
