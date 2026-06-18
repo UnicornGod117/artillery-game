@@ -109,14 +109,38 @@ shell/godot/
 
 ## Build status / verification
 
-The container this was authored in has a network allowlist that blocks the .NET
-SDK installer and the apt/NuGet feeds, so the C# could **not** be compiled or
-test-run here yet. The Core is written to compile cleanly under .NET 8; once a
-machine with the SDK (and NuGet access) is available:
+**Verified** under the .NET 8 SDK:
 
 ```bash
-dotnet test            # runs the Core unit tests
+dotnet build           # Core + tests build clean (0 warnings)
+dotnet test            # 38 Core unit tests pass
 ```
 
-The Godot shell additionally requires the Godot 4 editor to build/run (it cannot
-run headless in CI without an export template + display).
+The Godot shell (`shell/godot`) also **compiles clean** against `Godot.NET.Sdk`
+and the Core (`dotnet build` inside `shell/godot/`). Actually *running* the shell
+still needs the Godot 4 editor + a display (it can't render headless in CI), so
+the shell is intentionally kept out of `FiringSolution.sln` — that keeps root
+`dotnet build` / `dotnet test` working on a machine without Godot installed.
+
+### Fixes made while finishing the game
+
+- **Beam kill-energy was unwinnable as displayed.** The shown kill threshold was
+  rounded *below* the true gate, so a player delivering exactly the displayed
+  energy failed the strict `E ≥ kill` test. The truth is now snapped to the same
+  0.1 GJ grid the instrument reads out, so the readout is honestly achievable.
+- **Give-up could fail on solvable missions.** The "give up" reveal now lives in
+  the Core (`GameEngine.RevealKineticSolution`) and searches azimuth (for
+  crosswind lead at Hard tier) with a coarse-to-fine elevation pass (needed where
+  the arc is steep near a charge's max range and ~0.1° precision is required).
+- **Input precision is now stated** on every firing-solution field and on the
+  observed readouts (azimuth/elevation to 0.1°, range to 0.01 km, etc.).
+
+### Known gaps in the shell (see `docs/mockups/`)
+
+The instrument *chrome* is complete and the fire→score→observe loop is wired, but
+several instruments are still decorative placeholders: the reload bar, career
+score (not persisted), the scientific calculator, the handbook viewer, the
+Z-correction input (read but unused), and there is no "next mission" flow. The
+beam station also hard-codes its environment readouts instead of reading the
+mission. Annotated reconstructions of both stations are in
+[`docs/mockups/`](docs/mockups/).
