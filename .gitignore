@@ -1,0 +1,15 @@
+# .NET build output
+bin/
+obj/
+*.user
+
+# Godot
+.godot/
+.import/
+export_presets.cfg
+mono_crash.*.json
+
+# IDE
+.vs/
+.idea/
+.vscode/
