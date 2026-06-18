@@ -94,7 +94,7 @@ public class MissionTests
         var m = GameEngine.GenerateMission(new DifficultySliders(WeaponKind.Kinetic, MathFidelity: 1, Seed: 42));
         bool hitFound = false;
         for (int charge = 1; charge <= m.KineticWeapon!.MaxCharge && !hitFound; charge++)
-            for (double el = 5; el <= 85 && !hitFound; el += 0.5)
+            for (double el = 5; el <= 85 && !hitFound; el += 0.25)
             {
                 var r = GameEngine.FireKinetic(m, m.KineticTarget!.Bearing, el, charge);
                 if (r.Score.Hit) hitFound = true;

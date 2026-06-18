@@ -1,0 +1,289 @@
+using Godot;
+using System;
+using System.Collections.Generic;
+using FiringSolution.Core;
+using FiringSolution.Core.Models;
+
+namespace FiringSolution.Shell;
+
+/// <summary>
+/// Direction A — amber-phosphor gunnery, kinetic artillery. The player reads the
+/// situation, derives azimuth / elevation / charge by hand, commits, and the
+/// Core simulates the true arc and stamps the impact.
+/// </summary>
+public partial class KineticStation : StationView
+{
+    private Mission _mission = null!;
+    private double _az, _el = 45, _zc = 0;
+    private int _charge = 5;
+
+    private LineEdit _azField = null!, _elField = null!, _zcField = null!, _chargeField = null!;
+    private Label _v0Label = null!;
+    private readonly List<ColorRect> _pips = new();
+
+    protected override Palette BuildPalette() => Palette.Amber;
+
+    protected override Control BuildTopBar()
+    {
+        // Mission is needed for chip text — generate it up front.
+        _mission = GameEngine.GenerateMission(new DifficultySliders(
+            WeaponKind.Kinetic, MathFidelity: 1, Triangulation: 0.3, Circumstance: 0.3, Seed: 4471));
+        _az = Math.Round(_mission.KineticObserved!.Bearing);
+
+        return MakeTopBar(
+            "FCS-01 · STATION ALPHA · Kinetic artillery",
+            new[]
+            {
+                ("WPN · KINETIC ARTILLERY", true),
+                ("WORLD · " + _mission.World.Name, false),
+                ("TIER · " + _mission.TierLabel, false),
+                (_mission.Id, false),
+            },
+            "RELOAD CYCLE");
+    }
+
+    protected override Control BuildLeftPanel()
+    {
+        var panel = Ui.Panel(P.Panel, P.Border, pad: 16, borderW: 0);
+        var v = new VBoxContainer();
+        v.AddThemeConstantOverride("separation", 16);
+        panel.AddChild(v);
+
+        var o = _mission.KineticObserved!;
+
+        // --- Environment ---
+        v.AddChild(Ui.SectionHeader(P, "Environment", P.Accent, "MEASURED"));
+        var windRow = new HBoxContainer();
+        windRow.AddThemeConstantOverride("separation", 14);
+        var compass = new Compass { P = P, FromDeg = o.WindFrom };
+        windRow.AddChild(compass);
+        var windCol = new VBoxContainer();
+        windCol.AddThemeConstantOverride("separation", 2);
+        windCol.AddChild(Ui.Text("WIND VECTOR", P.Faint, 9));
+        windCol.AddChild(Ui.Text($"{o.WindSpeed:0.0} m/s", P.Text, 21));
+        windCol.AddChild(Ui.Text($"FROM {o.WindFrom:000}°", P.AccentDim, 11));
+        windRow.AddChild(windCol);
+        v.AddChild(windRow);
+        v.AddChild(MetricGrid(new[]
+        {
+            ("ALTITUDE", $"{_mission.Environment!.SiteAltitude:0} m"),
+            ("AIR TEMP", $"{o.AirTemp:0.0} °C"),
+            ("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"),
+            ("LOCAL g", $"{o.LocalG:0.000} m/s²"),
+        }, P.Text));
+
+        // --- Target observed ---
+        v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SPOTTER"));
+        v.AddChild(MetricGrid(new[]
+        {
+            ("GROUND RANGE", $"{o.Range / 1000:0.00} km"),
+            ("BEARING", $"{o.Bearing:0.0} °"),
+            ("TGT ALTITUDE", $"{o.Altitude:+0;-0;0} m"),
+            ("MOTION", "STATIC"),
+        }, new Color("e9ddc6")));
+        v.AddChild(Ui.Text("↳ Localised from OP-1 / OP-2. Range & drop are yours to solve.", P.Faint, 9));
+
+        // --- Weapon configuration ---
+        v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
+        var munBox = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
+        var munRow = new HBoxContainer();
+        munRow.AddChild(Ui.Text(_mission.KineticWeapon!.Munition.Name, P.Text, 12));
+        munRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        munRow.AddChild(Ui.Text("▾", P.Faint, 9));
+        munBox.AddChild(munRow);
+        v.AddChild(munBox);
+        var m = _mission.KineticWeapon!.Munition;
+        v.AddChild(MetricGrid(new[]
+        {
+            ("SHELL MASS", $"{m.Mass:0.0} kg"),
+            ("BALLISTIC COEF", $"{m.DragCoeff:0.000}"),
+        }, new Color("cdbf9f"), 13));
+
+        return panel;
+    }
+
+    protected override Control BuildRightPanel()
+    {
+        var panel = Ui.Panel(P.Panel, P.Border, pad: 15, borderW: 0);
+        var v = new VBoxContainer();
+        v.AddThemeConstantOverride("separation", 14);
+        panel.AddChild(v);
+
+        v.AddChild(Ui.SectionHeader(P, "Firing Solution — Your Input", P.Accent));
+        v.AddChild(Ui.Text("↳ type, or use the steppers. Nothing here is computed for you.", P.Faint, 9));
+
+        var grid = new GridContainer { Columns = 2 };
+        grid.AddThemeConstantOverride("h_separation", 11);
+        grid.AddThemeConstantOverride("v_separation", 11);
+        v.AddChild(grid);
+
+        _azField = AddNumberField(grid, "AZIMUTH (x) · °", _az.ToString("0.0"), 1.0,
+            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
+        _elField = AddNumberField(grid, "ELEVATION (y) · °", _el.ToString("0.0"), 0.5,
+            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
+        _zcField = AddNumberField(grid, "Z-CORR (cross) · °", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
+            d => { _zc = d; });
+        _chargeField = AddNumberField(grid, "PROPELLANT CHARGE", _charge.ToString(), 1.0,
+            d => { _charge = (int)Math.Round(d); UpdatePips(); RefreshV0(); },
+            isInt: true,
+            clamp: d => Math.Clamp(Math.Round(d), 1, _mission.KineticWeapon!.MaxCharge));
+
+        // Charge pips.
+        var pipRow = new HBoxContainer();
+        pipRow.AddThemeConstantOverride("separation", 5);
+        for (int i = 0; i < 7; i++)
+        {
+            var pip = new ColorRect { CustomMinimumSize = new Vector2(0, 15), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            _pips.Add(pip);
+            pipRow.AddChild(pip);
+        }
+        v.AddChild(pipRow);
+
+        var v0Row = new HBoxContainer();
+        v0Row.AddChild(Ui.Text("MUZZLE VELOCITY v₀ (from charge)", P.TextDim, 10));
+        v0Row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        _v0Label = Ui.Text("", P.Text, 10);
+        v0Row.AddChild(_v0Label);
+        v.AddChild(v0Row);
+
+        var fire = Ui.PrimaryButton(P, "◆  COMMIT & FIRE");
+        fire.Pressed += Fire;
+        v.AddChild(fire);
+
+        // Calculator (arithmetic only — honour-system boundary, design §4).
+        var calc = Ui.Panel(P.PanelDeep, P.Border, pad: 0, borderW: 1);
+        var cv = new VBoxContainer();
+        var calcHead = Ui.Panel(P.Bg, P.BorderSoft, pad: 9, borderW: 0);
+        var chh = new HBoxContainer();
+        chh.AddChild(Ui.Text("SCIENTIFIC CALCULATOR", P.TextDim, 10));
+        chh.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        chh.AddChild(Ui.Text("ARITHMETIC ONLY", P.Faint, 8));
+        calcHead.AddChild(chh);
+        cv.AddChild(calcHead);
+        var calcBody = new MarginContainer();
+        calcBody.AddThemeConstantOverride("margin_left", 11);
+        calcBody.AddThemeConstantOverride("margin_top", 9);
+        calcBody.AddThemeConstantOverride("margin_bottom", 9);
+        calcBody.AddChild(Ui.Text("v₀·cosθ·t  ·  v₀·sinθ·t − ½·g·t²", P.TextDim, 10));
+        cv.AddChild(calcBody);
+        calc.AddChild(cv);
+        v.AddChild(calc);
+
+        // Handbook + Help / Give up.
+        var hbk = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
+        var hbr = new HBoxContainer();
+        hbr.AddChild(Ui.Text("▤ HANDBOOK", P.Accent, 10));
+        hbr.AddChild(Ui.Text(" · Ballistics / Trig / Relativity", P.Faint, 10));
+        hbk.AddChild(hbr);
+        v.AddChild(hbk);
+
+        var actions = new HBoxContainer();
+        actions.AddThemeConstantOverride("separation", 9);
+        var help = Ui.FlatButton(P, "HELP", P.AccentDim, P.Border, 10);
+        help.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        var give = Ui.FlatButton(P, "GIVE UP", P.Faint, P.Border, 10);
+        give.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        help.Pressed += () => SetLastShot("HELP", P.AccentDim,
+            Array.Empty<(string, string, Color)>(),
+            "Vacuum→drag ladder: triangulate range, then R = v₀²·sin(2θ)/g; correct for g(h).");
+        give.Pressed += RevealSolution;
+        actions.AddChild(help);
+        actions.AddChild(give);
+        v.AddChild(actions);
+
+        return panel;
+    }
+
+    protected override void Configure()
+    {
+        Board.P = P; Board.IsBeam = false;
+        Board.PxPerMeter = 0.038f;
+        Board.RingStepM = 2000; Board.RingCount = 4;
+        Board.TargetRange = _mission.KineticObserved!.Range;
+        Board.TargetBearing = _mission.KineticObserved!.Bearing;
+        Board.TargetLabel = "TGT · ARMOR";
+        Board.AimAzimuth = _az;
+
+        VPlane.P = P; VPlane.IsBeam = false;
+        VPlane.AimElevation = _el;
+        VPlane.TargetRange = _mission.KineticObserved!.Range;
+        VPlane.TargetAltitude = _mission.KineticObserved!.Altitude;
+        VPlane.SetScale(_mission.KineticObserved!.Range * 1.25, 4000);
+    }
+
+    protected override void Refresh()
+    {
+        UpdatePips();
+        RefreshV0();
+    }
+
+    private void RefreshV0()
+        => _v0Label.Text = $"{_mission.KineticWeapon!.MuzzleVelocity(_charge):0} m/s";
+
+    private void UpdatePips()
+    {
+        for (int i = 0; i < _pips.Count; i++)
+            _pips[i].Color = i < _charge ? P.Accent : P.BorderSoft;
+    }
+
+    private void Fire()
+    {
+        KineticResult r = GameEngine.FireKinetic(_mission, _az, _el, _charge);
+        ShotNo++;
+
+        Board.HasFired = true;
+        Board.FiredRange = r.Trajectory.Impact.Range;
+        Board.FiredBearing = r.Trajectory.Impact.Bearing;
+        Board.FiredHit = r.Score.Hit;
+        Board.QueueRedraw();
+
+        var arc = new List<Vector2>();
+        foreach (var pt in r.Trajectory.Points)
+            arc.Add(new Vector2((float)Math.Sqrt(pt.X * pt.X + pt.Y * pt.Y), (float)pt.Z));
+        VPlane.Arc = arc;
+        VPlane.FiredHit = r.Score.Hit;
+        VPlane.SetScale(Math.Max(_mission.KineticTarget!.Range, r.Trajectory.Impact.Range) * 1.1,
+                        Math.Max(r.Trajectory.Apex * 1.2, 500));
+        VPlane.QueueRedraw();
+
+        string rng = $"{Math.Abs(r.Score.RangeError):0} m {(r.Score.RangeError > 1 ? "LONG" : r.Score.RangeError < -1 ? "SHORT" : "ON RANGE")}";
+        string line = $"{Math.Abs(r.Score.LineError):0} m {(r.Score.LineError > 1 ? "LEFT" : r.Score.LineError < -1 ? "RIGHT" : "ON LINE")}";
+        Color acc = r.Score.Hit ? P.Accent : P.Red;
+        if (r.Score.Hit) Career += 850;
+
+        SetLastShot(
+            r.Score.Hit ? "◆ TARGET DESTROYED" : "△ CALIBRATION SHOT", acc,
+            new[]
+            {
+                ("SHOT NO.", ShotNo.ToString("00"), P.Text),
+                ("MISS DIST.", $"{Math.Round(r.Score.Miss)} m", acc),
+                ("RANGE", rng, P.Text),
+                ("LINE", line, P.Text),
+            },
+            r.Score.Hit ? "within splash tolerance." : "apply correction & re-fire.");
+    }
+
+    private void RevealSolution()
+    {
+        // Give up: brute-force the engine to surface a working solution (graceful exit).
+        for (int c = 1; c <= _mission.KineticWeapon!.MaxCharge; c++)
+            for (double el = 5; el <= 85; el += 0.25)
+            {
+                var r = GameEngine.FireKinetic(_mission, _mission.KineticTarget!.Bearing, el, c);
+                if (r.Score.Hit)
+                {
+                    SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
+                        new[]
+                        {
+                            ("AZIMUTH", $"{_mission.KineticTarget!.Bearing:0.0}°", P.Text),
+                            ("ELEVATION", $"{el:0.0}°", P.Text),
+                            ("CHARGE", c.ToString(), P.Text),
+                        },
+                        "one valid firing solution shown.");
+                    return;
+                }
+            }
+        SetLastShot("GIVE UP", P.Red, Array.Empty<(string, string, Color)>(), "no closed solution found.");
+    }
+
+}

@@ -1,0 +1,20 @@
+<Project Sdk="Godot.NET.Sdk/4.3.0">
+
+  <!-- ======================================================================
+       FIRING SOLUTION — Shell (Godot 4 + C#)
+       Consumes FiringSolution.Core through its public GameEngine surface only.
+       ====================================================================== -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>FiringSolution.Shell</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FiringSolution.Core\FiringSolution.Core.csproj" />
+  </ItemGroup>
+
+</Project>
