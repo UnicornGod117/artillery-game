@@ -1,6 +1,4 @@
-using Godot;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace FiringSolution.Shell;
@@ -148,76 +146,4 @@ public static class Calculator
         _ => throw new FormatException($"unknown function '{f}'"),
     };
 
-    // ---- UI widget ---------------------------------------------------------
-
-    /// <summary>Build the calculator panel: input line, history, degree-mode trig.</summary>
-    public static Control Build(Palette p)
-    {
-        var calc = Ui.Panel(p.PanelDeep, p.Border, pad: 0, borderW: 1);
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 0);
-
-        var head = Ui.Panel(p.Bg, p.BorderSoft, pad: 9, borderW: 0);
-        var hr = new HBoxContainer();
-        hr.AddChild(Ui.Text("SCIENTIFIC CALCULATOR", p.TextDim, 10));
-        hr.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-        hr.AddChild(Ui.Text("ARITHMETIC ONLY · deg", p.Faint, 8));
-        head.AddChild(hr);
-        col.AddChild(head);
-
-        var body = new MarginContainer();
-        body.AddThemeConstantOverride("margin_left", 11);
-        body.AddThemeConstantOverride("margin_right", 11);
-        body.AddThemeConstantOverride("margin_top", 9);
-        body.AddThemeConstantOverride("margin_bottom", 9);
-        var bv = new VBoxContainer();
-        bv.AddThemeConstantOverride("separation", 6);
-        body.AddChild(bv);
-        col.AddChild(body);
-
-        var history = new VBoxContainer();
-        history.AddThemeConstantOverride("separation", 2);
-        bv.AddChild(history);
-
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 6);
-        var input = new LineEdit
-        {
-            PlaceholderText = "e.g.  570^2 * sin(2*38) / 9.817",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
-        input.AddThemeColorOverride("font_color", p.Text);
-        input.AddThemeFontSizeOverride("font_size", 13);
-        var ib = new StyleBoxFlat { BgColor = p.Bg, BorderColor = p.Border };
-        ib.SetBorderWidthAll(1);
-        ib.ContentMarginLeft = 8; ib.ContentMarginRight = 8;
-        ib.ContentMarginTop = 6; ib.ContentMarginBottom = 6;
-        input.AddThemeStyleboxOverride("normal", ib);
-        input.AddThemeStyleboxOverride("focus", ib);
-        var eq = Ui.FlatButton(p, "=", p.Accent, p.Border, 13);
-        eq.CustomMinimumSize = new Vector2(38, 0);
-        row.AddChild(input);
-        row.AddChild(eq);
-        bv.AddChild(row);
-
-        void Eval()
-        {
-            string expr = input.Text.Trim();
-            if (expr.Length == 0) return;
-            string line;
-            try { line = $"{expr} = {Calculator.Evaluate(expr):0.######}"; }
-            catch (Exception e) { line = $"{expr} = ERR ({e.Message})"; }
-
-            var lbl = Ui.Text(line, p.TextDim, 11);
-            history.AddChild(lbl);
-            while (history.GetChildCount() > 4) history.GetChild(0).QueueFree();
-            input.Clear();
-            input.GrabFocus();
-        }
-        eq.Pressed += Eval;
-        input.TextSubmitted += _ => Eval();
-
-        calc.AddChild(col);
-        return calc;
-    }
 }

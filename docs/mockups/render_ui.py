@@ -180,20 +180,11 @@ def render(kind, data, issues, callouts, outfile):
     d.rectangle([x,y,x+RW-30,y+44],fill=hx(p["Accent"]))
     d.text(((x+x+RW-30)/2,y+22),"◆  COMMIT & FIRE",font=f(16,True),fill=hx(p["Bg"]),anchor="mm")
     y+=54
-    # calculator — now a real evaluator (input + history, degree-mode trig)
-    ch=84
-    panel(d,p,[x,y,x+RW-30,y+ch],"PanelDeep","Border",1)
-    panel(d,p,[x,y,x+RW-30,y+26],"Bg","BorderSoft",0)
-    text(d,p,(x+11,y+8),"SCIENTIFIC CALCULATOR","TextDim",10)
-    text(d,p,(x+RW-41,y+9),"ARITHMETIC ONLY · deg","Faint",8,anchor="ra")
-    text(d,p,(x+11,y+32),data["calchist"],"TextDim",11)
-    irow=[x+11,y+52,x+RW-30-46,y+74]
-    panel(d,p,irow,"Bg","Border",1)
-    text(d,p,(irow[0]+8,irow[1]+5),data["calcinput"],"Text",12)
-    eqb=[x+RW-30-40,y+52,x+RW-30-11,y+74]
-    d.rectangle(eqb,outline=hx(p["Border"]),width=1)
-    text(d,p,((eqb[0]+eqb[2])/2,y+56),"=","Accent",13,anchor="ma")
-    y+=ch+9
+    # calculator — opens the pop-up keypad
+    d.rectangle([x,y,x+RW-30,y+30],outline=hx(p["Border"]),width=1)
+    text(d,p,(x+9,y+9),"▦  SCIENTIFIC CALCULATOR","Accent",10)
+    text(d,p,(x+RW-39,y+9),"· keypad","Faint",10,anchor="ra")
+    y+=38
     # handbook — now opens the Core formula reference
     d.rectangle([x,y,x+RW-30,y+30],outline=hx(p["Border"]),width=1)
     text(d,p,(x+9,y+9),"▤  HANDBOOK","Accent",10)
@@ -233,7 +224,7 @@ def render(kind, data, issues, callouts, outfile):
     # aim line (dashed)
     ab=math.radians(data["aim"]); aend=(gun[0]+tr*1.15*math.sin(ab)*ppm, gun[1]-tr*1.15*math.cos(ab)*ppm)
     dash_line(d,gun,aend,hx(p["Accent"]),1)
-    text(d,p,(aend[0]+4,aend[1]),f"AIM {data['aim']:.1f}°","Accent",8)
+    text(d,p,(aend[0]+4,aend[1]),f"BRG {data['aim']:.1f}°","Accent",8)
     # target mark
     d.rectangle([tp[0]-6,tp[1]-6,tp[0]+6,tp[1]+6],outline=hx(p["Red"]),width=2)
     d.line([tp[0]-11,tp[1],tp[0]+11,tp[1]],fill=hx(p["Red"]),width=1)
@@ -258,7 +249,7 @@ def render(kind, data, issues, callouts, outfile):
         d.line([gx,topp+6,gx,bottom],fill=hx(p["BorderSoft"]),width=1)
     el=math.radians(data["el"]); g0=(left,bottom)
     d.line([g0[0],g0[1],g0[0]+math.cos(el)*120,g0[1]-math.sin(el)*120],fill=hx(p["Accent"]),width=2)
-    text(d,p,(g0[0]+44,g0[1]-12),f"{data['el']:.1f}°","Accent",9)
+    text(d,p,(g0[0]+44,g0[1]-12),f"LAY {data['el']:.1f}°","Accent",9)
     tgx=left+0.62*plotw; tgy=bottom-0.18*ploth
     d.rectangle([tgx-5,tgy-5,tgx+5,tgy+5],outline=hx(p["Red"]),width=2)
     text(d,p,(tgx-30,tgy-18),f"TGT {tr/1000:.1f}km","Red",8)

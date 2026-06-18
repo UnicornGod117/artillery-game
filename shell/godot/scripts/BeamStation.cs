@@ -156,8 +156,11 @@ public partial class BeamStation : StationView
         reg.AddChild(rv);
         v.AddChild(reg);
 
-        // Calculator (arithmetic only — honour-system boundary, design §4).
-        v.AddChild(Calculator.Build(P));
+        // Calculator (arithmetic only — opens a pop-up keypad, design §4).
+        var calcBtn = Ui.FlatButton(P, "▦  SCIENTIFIC CALCULATOR · keypad", P.Accent, P.Border, 10);
+        calcBtn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        calcBtn.Pressed += () => CalculatorView.Open(this, P);
+        v.AddChild(calcBtn);
 
         // Handbook (opens the Core's formula reference) + Help / Give up.
         var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Relativity / Thermal / Vectors", P.Accent, P.Border, 10);
