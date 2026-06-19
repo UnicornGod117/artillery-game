@@ -45,19 +45,38 @@ public static class GameEngine
         return FireKinetic(mission, new KineticSolution(azimuth, elevation, v0));
     }
 
-    /// <summary>Commit a beam firing solution: straight-ray SR model, scored on pointing + energy.</summary>
-    public static BeamResult FireBeam(Mission mission, double azimuth, double elevation, double pulseEnergyJoules)
+    /// <summary>
+    /// Commit a beam firing solution: straight-ray SR model, scored on pointing + energy.
+    /// The player supplies the beam SPEED β (v/c); the delivered pulse energy is derived
+    /// and checked against the kill window.
+    /// </summary>
+    public static BeamResult FireBeam(Mission mission, double azimuth, double elevation, double beta)
     {
         if (mission.WeaponKind != WeaponKind.Beam ||
             mission.BeamWeapon is null || mission.BeamTarget is null)
             throw new InvalidOperationException("Mission is not a beam mission.");
 
         var t = mission.BeamTarget;
-        var shot = Relativistic.SimulateBeam(mission.BeamWeapon, t.SlantRange, azimuth, elevation, pulseEnergyJoules);
+        var shot = Relativistic.SimulateBeam(mission.BeamWeapon, t.SlantRange, azimuth, elevation, beta);
         var score = Scoring.ScoreBeam(
             shot, azimuth, elevation, t.Bearing, t.LosElevation, t.SlantRange,
-            t.KillEnergyJoules, mission.AngularTolerance);
+            t.RequiredPulseEnergyJoules, t.EnergyToleranceJoules, mission.AngularTolerance);
         return new BeamResult(shot, score);
+    }
+
+    /// <summary>
+    /// The beam "give up" escape hatch: solve the relativistic KE equation for the β that
+    /// lands the pulse at the centre of the kill window. γ = 1 + E_req/(N·m₀c²), β = √(1−1/γ²).
+    /// </summary>
+    public static double RevealBeamBeta(Mission mission)
+    {
+        if (mission.WeaponKind != WeaponKind.Beam ||
+            mission.BeamWeapon is null || mission.BeamTarget is null)
+            throw new InvalidOperationException("Mission is not a beam mission.");
+
+        var w = mission.BeamWeapon;
+        double gamma = 1.0 + mission.BeamTarget.RequiredPulseEnergyJoules / (w.ParticleCount * w.RestEnergyJoules);
+        return Relativistic.BetaFromGamma(gamma);
     }
 
     /// <summary>

@@ -6,21 +6,21 @@ namespace FiringSolution.Core.Tests;
 
 /// <summary>
 /// Regression tests for fairness/solvability bugs found while finishing the game:
-/// the beam kill-energy readout must be honestly achievable, and the kinetic
+/// the beam kill-energy window must be honestly achievable, and the kinetic
 /// give-up must reveal a working solution even when crosswind forces an azimuth lead.
 /// </summary>
 public class BeamSolvabilityTests
 {
     [Fact]
-    public void DisplayedKillEnergy_ExactlyMatchesTruth()
+    public void DisplayedRequiredEnergy_ExactlyMatchesTruth()
     {
         // The instrument reads out a published spec, not a noisy measurement — so the
-        // shown threshold must equal the true gate, never round below it.
+        // shown required energy must equal the true window centre, snapped to the 0.01 GJ grid.
         for (int seed = 0; seed < 30; seed++)
         {
             var m = GameEngine.GenerateMission(new DifficultySliders(
                 WeaponKind.Beam, MathFidelity: 2, Circumstance: 0.7, Seed: seed));
-            Assert.Equal(m.BeamTarget!.KillEnergyJoules, m.BeamObserved!.KillEnergyGJ * 1e9, 1.0);
+            Assert.Equal(m.BeamTarget!.RequiredPulseEnergyJoules, m.BeamObserved!.RequiredEnergyGJ * 1e9, 1.0);
         }
     }
 
@@ -28,18 +28,38 @@ public class BeamSolvabilityTests
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    public void DeliveringDisplayedEnergy_OnAxis_IsAlwaysAKill(int tier)
+    public void SolvingTheRequiredSpeed_OnAxis_IsAlwaysAKill(int tier)
     {
-        // A player who points at the true LOS and delivers exactly the displayed
-        // kill energy must score a kill — the readout cannot be a trap. (Beam sims
-        // are O(1), so a wide seed sweep here is cheap.)
+        // A player who points at the true LOS and dials the β that delivers the displayed
+        // required energy must score a kill — the readout cannot be a trap. The reveal does
+        // exactly that inversion: γ = 1 + E/(N·m₀c²), β = √(1 − 1/γ²).
         for (int seed = 0; seed < 40; seed++)
         {
             var m = GameEngine.GenerateMission(new DifficultySliders(
                 WeaponKind.Beam, MathFidelity: tier, Circumstance: 0.7, Seed: seed));
             var t = m.BeamTarget!;
-            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, m.BeamObserved!.KillEnergyGJ * 1e9);
-            Assert.True(r.Score.Hit, $"beam tier {tier} seed {seed} should be killable at the shown energy.");
+            double beta = GameEngine.RevealBeamBeta(m);
+            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, beta);
+            Assert.True(r.Score.Hit, $"beam tier {tier} seed {seed} should be killable at the solved speed.");
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void MaxingTheSpeed_Overshoots_AndMisses(int tier)
+    {
+        // The energy gate is a window, not a floor: cranking β to the ceiling delivers far
+        // too much energy and must fail, even pointed perfectly on-axis.
+        for (int seed = 0; seed < 40; seed++)
+        {
+            var m = GameEngine.GenerateMission(new DifficultySliders(
+                WeaponKind.Beam, MathFidelity: tier, Circumstance: 0.7, Seed: seed));
+            var t = m.BeamTarget!;
+            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, 0.999);
+            Assert.False(r.Score.Hit, $"beam tier {tier} seed {seed} must not be winnable by maxing β.");
+            Assert.True(r.Score.EnergyError > 0, "maxed β over-delivers energy.");
         }
     }
 }

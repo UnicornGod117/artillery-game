@@ -19,6 +19,7 @@ public sealed record BeamScore(
     double ElError,
     double AngError,     // deg
     double LateralMiss,  // m at target range
+    double EnergyError,  // delivered − required, J (+over / −under the window centre)
     bool OnAxis,
     bool EnergyOk,
     bool Hit
@@ -45,7 +46,7 @@ public static class Scoring
     public static BeamScore ScoreBeam(
         BeamShot beam, double aimAzimuth, double aimElevation,
         double targetBearing, double targetLosElevation, double targetSlantRange,
-        double killEnergyJoules, double angularToleranceDeg)
+        double requiredEnergyJoules, double energyToleranceJoules, double angularToleranceDeg)
     {
         double azErr = aimAzimuth - targetBearing;
         azErr = ((azErr + 540) % 360) - 180; // wrap to [-180,180]
@@ -54,7 +55,11 @@ public static class Scoring
         double lateralMiss = Math.Abs(targetSlantRange * Math.Sin(Constants.DegToRad(angErr)));
 
         bool onAxis = angErr <= angularToleranceDeg;
-        bool energyOk = beam.PulseEnergyJoules >= killEnergyJoules;
-        return new BeamScore(azErr, elErr, angErr, lateralMiss, onAxis, energyOk, onAxis && energyOk);
+        // Energy is a WINDOW, not a floor: too little fails to penetrate, too much
+        // over-penetrates and passes through. So "just crank β to the limit" overshoots
+        // and misses — the player has to solve for the β that lands inside the band.
+        double energyError = beam.PulseEnergyJoules - requiredEnergyJoules;
+        bool energyOk = Math.Abs(energyError) <= energyToleranceJoules;
+        return new BeamScore(azErr, elErr, angErr, lateralMiss, energyError, onAxis, energyOk, onAxis && energyOk);
     }
 }

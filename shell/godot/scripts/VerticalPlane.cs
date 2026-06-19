@@ -107,9 +107,10 @@ public partial class VerticalPlane : Control
         DrawRect(new Rect2(tgt - new Vector2(5, 5), new Vector2(10, 10)), P.Red, false, 1.5f);
         // A faint drop/lift line from gun level makes the altitude difference legible.
         DrawDashed(new Vector2(tgt.X, gunY), tgt, P.Red, 1f, 3, 3);
-        string altTag = TargetAltitude >= 0 ? $"+{TargetAltitude:0} m" : $"{TargetAltitude:0} m";
-        DrawString(font, tgt + new Vector2(-34, tgt.Y <= gunY ? -10 : 22),
-            $"TGT {TargetRange / 1000:0.0}km · {altTag}", HorizontalAlignment.Left, -1, 8, P.Red);
+        // Situational picture only — the exact range/drop are the player's to measure, so
+        // the marker is unlabelled with numbers (those come from the coordinates).
+        DrawString(font, tgt + new Vector2(-10, tgt.Y <= gunY ? -10 : 22),
+            "TGT", HorizontalAlignment.Left, -1, 8, P.Red);
 
         // Fired arc / ray — the ONLY trajectory ever drawn, and only after firing.
         // `Arc` is populated solely from the committed shot's real simulated points

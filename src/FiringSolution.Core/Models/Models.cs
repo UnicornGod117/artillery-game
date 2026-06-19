@@ -32,12 +32,17 @@ public sealed record KineticWeapon(string Name, Munition Munition)
     public int MaxCharge => 7;
 }
 
-/// <summary>A relativistic particle-beam weapon.</summary>
+/// <summary>
+/// A relativistic particle-beam weapon. The beam SPEED is no longer fixed — the
+/// player dials β at the station — so the weapon only carries what's invariant: the
+/// particle's rest energy and how many of them ride in one pulse. The delivered pulse
+/// energy is then ParticleCount·(γ−1)·m₀c².
+/// </summary>
 public sealed record BeamWeapon(
     string Name,
     string ProfileName,
     double RestEnergyJoules, // m0·c^2 of the particle, J
-    double Beta              // v/c
+    double ParticleCount     // protons per pulse, N
 );
 
 /// <summary>The environment a kinetic shot flies through.</summary>

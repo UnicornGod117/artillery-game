@@ -74,6 +74,14 @@ public static class MissionGenerator
             AirDensity: Math.Round(rho * 1000) / 1000,
             LocalG: Math.Round(localG * 1000) / 1000);
 
+        // Place the gun somewhere on a battlespace grid (NOT at the origin). Drawn last so
+        // the deterministic sequence above is untouched. Offsetting by ≥ maxRange keeps the
+        // target's absolute coordinate (gun + relative) in the positive quadrant.
+        var gunOrigin = new Vec3(
+            Math.Round(maxRange + rng.Lerp(0, 8000)),
+            Math.Round(maxRange + rng.Lerp(0, 8000)),
+            siteAltitude);
+
         return new Mission(
             Id: "MSN-" + ((uint)seed % 10000).ToString("D4"),
             WeaponKind: WeaponKind.Kinetic,
@@ -82,7 +90,8 @@ public static class MissionGenerator
             Flags: flags, Sliders: s, Seed: seed,
             KineticWeapon: weapon, Environment: env,
             KineticTarget: target, KineticObserved: observed,
-            Splash: weapon.Munition.Splash);
+            Splash: weapon.Munition.Splash,
+            GunOrigin: gunOrigin);
     }
 
     private static Mission GenerateBeam(DifficultySliders s, Rng rng, int seed)
@@ -95,25 +104,43 @@ public static class MissionGenerator
         double slantRange = Math.Round(rng.Lerp(18000, 46000));
         double bearing = Math.Round(rng.Lerp(0, 360) * 10) / 10;
         double losElevation = Math.Round(rng.Lerp(4, 18) * 10) / 10;
-        // Kill threshold is a published spec the instrument reads out exactly, not a
-        // noisy measurement — so snap the TRUTH to the displayed 0.1 GJ grid. Otherwise
-        // the readout rounds below the true gate and a player who delivers exactly the
-        // shown energy fails the strict (E ≥ kill) test through no fault of their own.
-        double killEnergyGJ = Math.Round(rng.Lerp(2.5, 4.5) * (1 + 0.25 * s.Circumstance) * 10) / 10;
-        double killEnergy = killEnergyGJ * 1e9;
 
-        var target = new BeamTarget(slantRange, bearing, losElevation, killEnergy);
+        // The kill needs the protons to arrive inside an ENERGY WINDOW. We pick the β the
+        // kill is tuned to (well-conditioned 0.90–0.965 band so dialling β to 0.01 %c is
+        // plenty precise), then DERIVE the required pulse energy from it. The player runs
+        // that inversion the other way: γ = 1 + E/(N·m₀c²), β = √(1 − 1/γ²). The required
+        // energy is a published figure, so snap the TRUTH to the displayed 0.01 GJ grid —
+        // a player who solves the shown value lands dead-centre in the window, never trapped.
+        double betaSol = 0.90 + 0.065 * rng.Next();
+        double requiredGJ = Math.Round(Relativistic.PulseEnergy(weapon, betaSol) / 1e9 * 100) / 100;
+        double requiredJ = requiredGJ * 1e9;
+        // Tighter window at higher circumstance; floored so the band is always achievable.
+        double toleranceGJ = Math.Max(0.08, Math.Round((0.045 - 0.015 * s.Circumstance) * requiredGJ * 100) / 100);
+        double toleranceJ = toleranceGJ * 1e9;
 
-        double triNoise = s.Triangulation * 0.015;
+        var target = new BeamTarget(slantRange, bearing, losElevation, requiredJ, toleranceJ);
+
+        // The target is handed over as a precise COORDINATE (no calibration/spotter loop
+        // exists for the beam to correct against), so the observed geometry is the truth —
+        // pointing is solvable to well within the on-axis tolerance once the player works
+        // bearing/elevation out of the coordinate. The energy WINDOW is the precision gate.
         var observed = new BeamObserved(
-            SlantRange: Math.Round(rng.Noisy(slantRange, triNoise)),
-            Bearing: Math.Round(rng.Noisy(bearing, triNoise * 0.5) * 10) / 10,
-            LosElevation: Math.Round(rng.Noisy(losElevation, triNoise) * 10) / 10,
+            SlantRange: slantRange,
+            Bearing: bearing,
+            LosElevation: losElevation,
             Closing: Math.Round(rng.Lerp(120, 480)),
             AirTemp: Math.Round(rng.Lerp(-60, -10)),
             AirDensity: Math.Round(Atmosphere.DensityAt(world, 12000) * 1000) / 1000,
             LocalG: Math.Round(Atmosphere.SurfaceGravity(world, 12000) * 100) / 100,
-            KillEnergyGJ: killEnergyGJ);
+            RequiredEnergyGJ: requiredGJ,
+            ToleranceGJ: toleranceGJ);
+
+        // Ground emitter on the battlespace grid (NOT at the origin); drawn last so the
+        // sequence above stays deterministic. Offset ≥ max slant range → positive quadrant.
+        var gunOrigin = new Vec3(
+            Math.Round(46000 + rng.Lerp(0, 8000)),
+            Math.Round(46000 + rng.Lerp(0, 8000)),
+            0);
 
         return new Mission(
             Id: "MSN-" + ((uint)seed % 10000).ToString("D4"),
@@ -122,7 +149,8 @@ public static class MissionGenerator
             TierIndex: tierIdx, TierName: TierNames[tierIdx], TierLabel: TierLabels[tierIdx],
             Flags: flags, Sliders: s, Seed: seed,
             BeamWeapon: weapon, BeamTarget: target, BeamObserved: observed,
-            AngularTolerance: 0.18);
+            AngularTolerance: 0.18,
+            GunOrigin: gunOrigin);
     }
 
     /// <summary>Wind compass-"from" direction → ENU velocity (air moves toward from+180).</summary>

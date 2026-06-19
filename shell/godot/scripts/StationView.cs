@@ -290,7 +290,8 @@ public abstract partial class StationView : Control
     protected static double Parse(LineEdit f) => double.TryParse(f.Text, out var n) ? n : 0;
 
     protected LineEdit AddNumberField(GridContainer grid, string label, string val, double step,
-        System.Action<double> apply, bool isInt = false, System.Func<double, double>? clamp = null)
+        System.Action<double> apply, bool isInt = false, System.Func<double, double>? clamp = null,
+        string? format = null)
     {
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 5);
@@ -303,7 +304,7 @@ public abstract partial class StationView : Control
         void Commit(double next)
         {
             if (clamp != null) next = clamp(next);
-            field.Text = isInt ? ((int)System.Math.Round(next)).ToString() : next.ToString("0.0");
+            field.Text = isInt ? ((int)System.Math.Round(next)).ToString() : next.ToString(format ?? "0.0");
             apply(next);
         }
         up.Pressed += () => Commit(Parse(field) + step);
