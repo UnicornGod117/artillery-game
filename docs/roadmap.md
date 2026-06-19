@@ -8,8 +8,14 @@ four difficulty sliders (design §6):
 
 - **Kinetic** — world (Earth / exotic), gun & target altitude, ground range, bearing,
   wind vector, air data, and the noisy *observed* readouts shown to the player.
-- **Beam** — world, slant range, bearing, line-of-sight elevation, kill-energy
-  threshold, closing speed, air data.
+- **Beam** — world, slant range, bearing, line-of-sight elevation, the **required-energy
+  window** (required ± tolerance), closing speed, air data. The player dials the
+  **particle speed β** (as a % of c), and the delivered pulse energy `N·(γ−1)m₀c²` must
+  land inside the window — so they solve the speed for the energy, and over-cooking β
+  over-penetrates rather than wins.
+
+Both stations now present the target as an absolute **battlespace coordinate** (the gun
+is no longer the origin); range, bearing and elevation are the player's to derive.
 
 Same seed → identical mission (covered by the determinism tests). The shell's
 **NEW MISSION** button advances the seed, so every mission on each station is fresh.
@@ -23,63 +29,79 @@ MEDIUM I, since the design forbids a trivial beam mission. The remaining sliders
 
 ## Planned expansions
 
-### ★ Timed beam intercept — a relativistic time-of-flight puzzle
+### ★ Timed warhead intercept — a proper-time (time-dilation) puzzle
 
 *Proposed by the player. The beam's signature problem is energy/γ, not lead — this
-turns the beam's relativity into the actual win condition by making **timing** matter.*
+turns relativity itself into the win condition by making **the warhead's own clock**
+matter.*
 
-**Fantasy.** The target is only destructible during a narrow window — e.g. a warhead
-that arms then detonates, a shielded asset that drops its shield for a beat, or a
-vessel that must be hit *exactly* as it crosses a point. You don't pick a propellant
-charge (that's the kinetic dial); for the beam you set the **particle/pulse energy**,
-and that single dial decides both whether the shot is lethal *and when it arrives*.
+**Fantasy.** You fire a warhead with a fixed-duration fuse: it detonates after a set
+amount of time **on its own onboard clock** — a *proper time* `τ_fuse` measured in the
+warhead's rest frame. The target sits at a known, far-off distance `R`. Because the
+warhead flies at relativistic speed, its onboard clock runs slow (time dilation), so
+**the faster you send it, the longer that fuse lasts in our frame, and the farther it
+travels before it blows.** The whole puzzle is: compute *exactly* how fast to launch it
+so the dilated fuse detonates precisely on the target. You aren't picking a kill energy
+— you're picking the speed whose `γ` slows the warhead's clock by the perfect amount.
 
-**The physics (all honest SI).** The pulse flies a straight ray at `βc`, so its
-arrival time is
-
-```
-t_flight = R / (β·c)
-```
-
-where `R` is the slant range. The player's input is the particle kinetic energy,
+**The physics (all honest SI).**
 
 ```
-E_k = (γ − 1)·m₀·c²   ⇒   γ = 1 + E_k/(m₀c²)   ⇒   β = √(1 − γ⁻²)
+onboard fuse fires after proper time      τ_fuse           (warhead rest frame)
+in our (lab) frame that takes             t = γ·τ_fuse      (moving clock runs slow)
+distance covered before detonation        d = β·c·t = β·γ·c·τ_fuse
+detonate on the target  ⇒  d = R   ⇒   β·γ = R / (c·τ_fuse)
 ```
 
-so **more energy → higher γ → higher β → shorter flight time**. The win condition
-couples three gates through one continuous control:
+so with `k = R / (c·τ_fuse)`:  **`β = k/√(1 + k²)`,  `γ = √(1 + k²)`.** There is exactly
+one launch speed that lands the blast on the target. `γ` enters **twice** — once as the
+speed that carries the warhead, once as the dilation that stretches its fuse — which is
+what makes this a genuine relativity problem and not just "go fast."
+
+**Win gates (couple as many as desired through the one speed dial):**
 
 1. **Pointing** within the on-axis tolerance (as today),
-2. **Lethality**: delivered energy ≥ kill threshold (as today),
-3. **Timing**: `t_flight ∈ [t_lo, t_hi]` — the target's vulnerability window.
+2. **Timing / dilation**: detonation distance `d = β·γ·c·τ_fuse` within a hit band of `R`,
+3. *(optional)* **Lethality**: delivered energy inside its window (the current β→energy
+   mechanic), so the same dial must satisfy speed *and* punch at once.
 
-The player solves for the energy band that satisfies all three. It's the inverse of
-the kinetic lead problem: there you solve flight time *to lead a mover*; here you
-*tune* flight time directly via β.
+It's the inverse of the kinetic lead problem: there you solve flight time to lead a
+mover; here you *tune* the warhead's proper time directly via β.
 
-**Optional deepening.**
-- **Proper time**: the particle experiences `τ = t_flight / γ`. A variant could fuse
-  on the particle's *own* clock (a payload timed in its rest frame), making γ enter
-  twice — once for speed, once for the proper-time fuse.
-- **Relativistic Doppler / aberration** on a fast closer's sensor returns, as a
-  measurement the player must de-shift before solving (ties into design §7 "Hard").
+**Hard requirement — the projectile animation must show real flight time.** Once the
+arrival/detonation time decides the kill, the on-screen travel can no longer be a fixed
+~0.55 s flourish. The flyout must run for the **actual flight time** `t_flight = R/(βc)`
+(and, for the kinetic gun, the trajectory's real time of flight) — ideally in real time,
+or on a single honest, fixed scale (a constant sim-seconds-per-real-second) so a far/slow
+shot visibly takes longer than a near/fast one. Concretely:
+
+- Drive `BeginImpactAnim` / `BeginArcAnim` from the computed flight time, **not** the
+  hard-coded `0.55 s` in `PlottingBoard` / `VerticalPlane`.
+- Choose one global time-scale so engagements read at human pace, and apply it
+  consistently to every shot so durations stay comparable.
+- Surface the warhead's **onboard (proper-time) clock** ticking down to detonation, so
+  the dilation the player solved for is legible on screen.
+
+**Optional deepening.** Relativistic Doppler / aberration on a fast closer's sensor
+returns, as a measurement the player must de-shift before solving (ties into design §7
+"Hard").
 
 **Design note / dependency.** At β ≈ 0.9–0.99 over tens of km, `t_flight` is
-sub-millisecond — too short for timing to be a real puzzle. So this mechanic wants
-**long-range / orbital engagements** (thousands–millions of km) or a genuinely tight
-window. It therefore pairs naturally with the **orbital-asset targets** already noted
-in design §9, and would extend `BeamTarget` with a vulnerability window and the
-generator with timing parameters; scoring gains a timing gate alongside the existing
-pointing + energy gates.
+sub-millisecond — too short to *see* or to puzzle over, and the dilation is invisibly
+small. So this mechanic wants **long-range / orbital engagements** (thousands–millions
+of km), where both the flight time and the proper-time gap become substantial and the
+animation finally has something real to portray. It therefore pairs naturally with the
+**orbital-asset targets** already noted in design §9, and would extend `BeamTarget` with
+`τ_fuse` and a detonation-distance band, the generator with the timing parameters, and
+scoring with the dilation gate; the shell's flyout becomes flight-time-driven.
 
 ---
 
 ## Deferred (from design §12 and this build)
 
-- **Difficulty-selector UI** in the shell (the Core already generates all four tiers).
+- ~~**Difficulty-selector UI** in the shell~~ — **shipped** (top-bar tier selector).
 - **Moving targets** — wires up the Predictability slider and delivers Medium II's
   intended moving-target intercept lead.
-- **Reload / cooldown throttle** — the last decorative instrument (the reload bar).
+- ~~**Reload / cooldown throttle**~~ — **shipped** (the reload bar locks the fire button).
 - Campaign, resource economy, upgrade tree, leaderboards.
 - The remaining three weapon classes (interceptor, railgun, missile) and more worlds.
