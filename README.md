@@ -122,13 +122,17 @@ shell/godot/
 
 ### Run
 
-1. Install [Godot 4.3 **.NET/Mono** edition](https://godotengine.org/download)
-   and the .NET 8 SDK.
-2. Open `shell/godot/project.godot` in the Godot editor (it will build the C#
-   solution, restoring the Core reference).
-3. Press **Play**. **Commit & Fire** simulates exactly the azimuth / elevation /
-   charge you entered; the impact is stamped on the board, and a miss reports
-   range/line corrections. **Tab** switches between the two stations.
+**First time only — double-click `INSTALL.bat`.**
+It will download and install Godot 4.3 .NET edition and check for the .NET 8 SDK
+(installing it via `winget` if missing). Takes a few minutes.
+
+**Every time after — double-click `PLAY.bat`.**
+It builds the latest code and launches the game. After any `git pull` it always
+rebuilds from scratch, so you are never running a stale cached version.
+
+Once in the game: **Commit & Fire** simulates exactly the azimuth / elevation /
+charge you entered; the impact is stamped on the board, and a miss reports
+range/line corrections. **Tab** switches between the two stations.
 
 > The `Godot.NET.Sdk` version in `FiringSolution.Shell.csproj` (4.3.0) should
 > match your installed Godot version.
