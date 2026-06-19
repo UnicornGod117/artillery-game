@@ -14,9 +14,10 @@ four difficulty sliders (design §6):
 Same seed → identical mission (covered by the determinism tests). The shell's
 **NEW MISSION** button advances the seed, so every mission on each station is fresh.
 
-*Current shell limitation:* the difficulty sliders are hard-coded per station
-(kinetic → Medium I, beam → Hard). The Core supports all four tiers procedurally; the
-shell just lacks a difficulty-selector UI. See "Deferred" below.
+The shell now exposes a **difficulty selector** in the top bar (cycles EASY → MEDIUM I
+→ MEDIUM II → HARD and regenerates in place); the beam station's minimum tier is
+MEDIUM I, since the design forbids a trivial beam mission. The remaining sliders
+(triangulation / circumstance / predictability) are still fixed per station.
 
 ---
 

@@ -35,18 +35,20 @@ public partial class CalculatorView : Control
 
         var panel = Ui.Panel(_p.Panel, _p.AccentDim, pad: 0, borderW: 1);
         panel.CustomMinimumSize = new Vector2(430, 560);
-        panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.KeepSize);
+        panel.SetAnchorsPreset(LayoutPreset.TopLeft);
+        panel.Position = ((GetViewportRect().Size - panel.CustomMinimumSize) / 2).Round();
         AddChild(panel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 0);
         panel.AddChild(col);
 
-        // Header.
+        // Header (drag here to move the window).
         var head = Ui.Panel(_p.PanelDeep, _p.BorderSoft, pad: 12, borderW: 0);
+        Ui.MakeDraggable(head, panel);
         var hr = new HBoxContainer();
         hr.AddChild(Ui.Text("▦  SCIENTIFIC CALCULATOR", _p.Text, 13, true));
-        hr.AddChild(Ui.Text("ARITHMETIC ONLY · deg", _p.Faint, 8));
+        hr.AddChild(Ui.Text("ARITHMETIC ONLY · deg · drag title to move", _p.Faint, 8));
         hr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         var close = Ui.FlatButton(_p, "CLOSE  ✕", _p.TextDim, _p.Border, 10);
         close.Pressed += QueueFree;
@@ -118,6 +120,14 @@ public partial class CalculatorView : Control
     }
 
     private void Apply(string token, Act act)
+    {
+        // Belt-and-suspenders: an exception escaping a Godot signal handler can take the
+        // whole app down, so nothing here is allowed to throw out of the callback.
+        try { ApplyCore(token, act); }
+        catch (Exception e) { _result.Text = "= ERR"; AddHistory(e.Message, _p.Red); }
+    }
+
+    private void ApplyCore(string token, Act act)
     {
         switch (act)
         {

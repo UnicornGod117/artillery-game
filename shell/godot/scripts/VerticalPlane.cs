@@ -24,7 +24,22 @@ public partial class VerticalPlane : Control
     public List<Vector2>? Arc = null; // x = range m, y = altitude m (relative to gun)
     public bool FiredHit = false;
 
+    // Fly-out animation: the arc draws in over ~0.55 s, a shell riding the leading edge.
+    private float _reveal = 1f;
+    private bool _animating = false;
+
     private float _maxRange = 12000, _maxAlt = 4000, _minAlt = 0;
+
+    /// <summary>Start drawing the committed arc progressively from the muzzle.</summary>
+    public void BeginArcAnim() { _reveal = 0f; _animating = true; SetProcess(true); QueueRedraw(); }
+
+    public override void _Process(double delta)
+    {
+        if (!_animating) { SetProcess(false); return; }
+        _reveal += (float)delta / 0.55f;
+        if (_reveal >= 1f) { _reveal = 1f; _animating = false; }
+        QueueRedraw();
+    }
 
     /// <summary>Set the plotted window. <paramref name="minAlt"/> &lt; 0 shows below-gun ground.</summary>
     public void SetScale(double maxRange, double maxAlt, double minAlt = 0)
@@ -101,15 +116,27 @@ public partial class VerticalPlane : Control
         // (KineticStation/BeamStation.Fire); there is no pre-fire prediction path.
         if (Arc is { Count: > 1 })
         {
-            var pts = new Vector2[Arc.Count];
-            for (int i = 0; i < Arc.Count; i++)
+            int shown = _animating
+                ? System.Math.Max(2, (int)Mathf.Ceil(_reveal * Arc.Count))
+                : Arc.Count;
+            shown = System.Math.Min(shown, Arc.Count);
+            var pts = new Vector2[shown];
+            for (int i = 0; i < shown; i++)
                 pts[i] = ToScreen(Arc[i].X, Arc[i].Y);
             Color c = FiredHit ? P.Accent : P.TextDim;
             DrawPolyline(pts, c, 1.8f, true);
             Vector2 lastp = pts[^1];
-            Color ic = FiredHit ? P.Accent : P.Red;
-            DrawLine(lastp + new Vector2(-5, -5), lastp + new Vector2(5, 5), ic, 1.6f);
-            DrawLine(lastp + new Vector2(-5, 5), lastp + new Vector2(5, -5), ic, 1.6f);
+            if (_animating)
+            {
+                // The round in flight along the real arc.
+                DrawCircle(lastp, 3.5f, FiredHit ? P.Accent : P.Red);
+            }
+            else
+            {
+                Color ic = FiredHit ? P.Accent : P.Red;
+                DrawLine(lastp + new Vector2(-5, -5), lastp + new Vector2(5, 5), ic, 1.6f);
+                DrawLine(lastp + new Vector2(-5, 5), lastp + new Vector2(5, -5), ic, 1.6f);
+            }
         }
     }
 

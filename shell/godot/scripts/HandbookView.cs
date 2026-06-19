@@ -30,15 +30,17 @@ public partial class HandbookView : Control
 
         var panel = Ui.Panel(_p.Panel, _p.AccentDim, pad: 0, borderW: 1);
         panel.CustomMinimumSize = new Vector2(720, 660);
-        panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center, LayoutPresetMode.KeepSize);
+        panel.SetAnchorsPreset(LayoutPreset.TopLeft);
+        panel.Position = ((GetViewportRect().Size - panel.CustomMinimumSize) / 2).Round();
         AddChild(panel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 0);
         panel.AddChild(col);
 
-        // Header.
+        // Header (drag here to move the window).
         var head = Ui.Panel(_p.PanelDeep, _p.BorderSoft, pad: 14, borderW: 0);
+        Ui.MakeDraggable(head, panel);
         var hr = new HBoxContainer();
         hr.AddChild(new ColorRect { Color = _p.Accent, CustomMinimumSize = new Vector2(6, 6), SizeFlagsVertical = SizeFlags.ShrinkCenter });
         var ht = new MarginContainer(); ht.AddThemeConstantOverride("margin_left", 8);

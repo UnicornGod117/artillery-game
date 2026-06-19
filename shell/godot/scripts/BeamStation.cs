@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using FiringSolution.Core;
 using FiringSolution.Core.Models;
-using FiringSolution.Core.Engine;
 using FiringSolution.Core.Content;
 
 namespace FiringSolution.Shell;
@@ -15,18 +14,24 @@ namespace FiringSolution.Shell;
 /// </summary>
 public partial class BeamStation : StationView
 {
-    private static int _seedSeq = 9120;   // advances each new mission
+    private static int _seedSeq = 9120;   // source of fresh seeds (NEW MISSION advances it)
+    private static int _seed = -1;        // current mission seed (kept across tier changes)
+    private static int _tier = 3;         // difficulty tier (selectable; beam min is 1)
     private Mission _mission = null!;
     private double _az, _el, _zc = 0, _en = 4.2; // pulse energy, GJ
 
-    private Label _gammaLabel = null!, _betaLabel = null!, _enLabel = null!;
+    private Label _enLabel = null!;
 
     protected override Palette BuildPalette() => Palette.Ice;
 
+    protected override void OnNewMission() => _seed = _seedSeq++;
+
     protected override Control BuildTopBar()
     {
+        if (_seed < 0) _seed = _seedSeq++;
+
         _mission = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Beam, MathFidelity: 3, Triangulation: 0.25, Circumstance: 0.6, Seed: _seedSeq++));
+            WeaponKind.Beam, MathFidelity: _tier, Triangulation: 0.25, Circumstance: 0.6, Seed: _seed));
         _az = Math.Round(_mission.BeamObserved!.Bearing);
         _el = Math.Round(_mission.BeamObserved!.LosElevation);
 
@@ -36,10 +41,10 @@ public partial class BeamStation : StationView
             {
                 ("WPN · RELATIVISTIC BEAM", true),
                 ("WORLD · " + _mission.World.Name, false),
-                ("TIER · " + _mission.TierLabel, false),
                 (_mission.Id, false),
             },
-            "CAPACITOR CHARGE");
+            "CAPACITOR CHARGE",
+            _tier, 1, t => { _tier = t; (GetParent() as Main)?.ReloadStation(); });
     }
 
     protected override Control BuildLeftPanel()
@@ -65,11 +70,11 @@ public partial class BeamStation : StationView
         wc.AddChild(Ui.Text($"BEARING {o.Bearing:000.0}°", P.AccentDim, 11));
         windRow.AddChild(wc);
         v.AddChild(windRow);
+        // Only the data the engagement actually turns on — pointing is set by the LOS
+        // geometry; thermal/air figures the model doesn't use are left off the panel.
         v.AddChild(MetricGrid(new[]
         {
             ("TGT ALTITUDE", $"{tgtAltKm:0.0} km"),
-            ("AIR TEMP", $"{o.AirTemp:0} °C"),
-            ("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"),
             ("LOCAL g", $"{o.LocalG:0.00} m/s²"),
         }, P.Text));
 
@@ -128,31 +133,29 @@ public partial class BeamStation : StationView
 
         var fire = Ui.PrimaryButton(P, "◆  COMMIT & FIRE");
         fire.Pressed += Fire;
+        FireButton = fire;
         v.AddChild(fire);
 
-        // Relativistic regime, derived from the player's input.
-        var reg = Ui.Panel(P.PanelDeep, P.Border, pad: 0, borderW: 1);
-        var rv = new VBoxContainer();
-        var rh = Ui.Panel(P.Bg, P.BorderSoft, pad: 9, borderW: 0);
-        var rhr = new HBoxContainer();
-        rhr.AddChild(Ui.Text("RELATIVISTIC REGIME", P.TextDim, 10));
-        rhr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        rhr.AddChild(Ui.Text("β,γ FIXED · SET PULSE ENERGY", P.AccentDim, 8));
-        rh.AddChild(rhr);
-        rv.AddChild(rh);
-        var rg = new GridContainer { Columns = 2 };
-        rg.AddThemeConstantOverride("h_separation", 1);
-        rg.AddThemeConstantOverride("v_separation", 1);
+        // Beam parameters. Only the published specs are shown: the beam's β (a weapon
+        // figure) and the kill threshold. γ and the rest are the player's to derive —
+        // the panel no longer states what to solve for or pre-computes the Lorentz factor.
         double beta = _mission.BeamWeapon!.Beta;
-        double gamma = Relativistic.Lorentz(beta);
-        _betaLabel = Ui.Text($"{beta:0.000}", P.Text, 14);
-        _gammaLabel = Ui.Text($"{gamma:0.000}", P.Text, 14);
+        var reg = Ui.Panel(P.PanelDeep, P.Border, pad: 12, borderW: 1);
+        var rv = new VBoxContainer();
+        rv.AddThemeConstantOverride("separation", 8);
+        rv.AddChild(Ui.Text("BEAM PARAMETERS", P.TextDim, 10));
+        rv.AddChild(MetricGrid(new[]
+        {
+            ("BEAM β", $"{beta:0.000} c"),
+            ("KILL THRESHOLD · GJ", $"≥ {_mission.BeamObserved!.KillEnergyGJ:0.0}"),
+        }, P.Text, 14));
+        // Live pulse-energy readout (echoes the player's input).
+        var pr = new HBoxContainer();
+        pr.AddChild(Ui.Text("PULSE ENERGY (set)", P.Faint, 9));
+        pr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         _enLabel = Ui.Text($"{_en:0.0} GJ", P.Accent, 14);
-        rg.AddChild(WrapMetric("β", _betaLabel));
-        rg.AddChild(WrapMetric("LORENTZ γ", _gammaLabel));
-        rg.AddChild(WrapMetric("PULSE ENERGY", _enLabel));
-        rg.AddChild(WrapMetric("KILL THRESHOLD", Ui.Text($"≥ {_mission.BeamObserved!.KillEnergyGJ:0.0} GJ", new Color("aebecb"), 14)));
-        rv.AddChild(rg);
+        pr.AddChild(_enLabel);
+        rv.AddChild(pr);
         reg.AddChild(rv);
         v.AddChild(reg);
 
@@ -219,7 +222,7 @@ public partial class BeamStation : StationView
         Board.FiredRange = _mission.BeamObserved!.SlantRange;
         Board.FiredBearing = _az;
         Board.FiredHit = r.Score.Hit;
-        Board.QueueRedraw();
+        Board.BeginImpactAnim();
 
         double el = Constants.DegToRad(_el);
         double s = _mission.BeamObserved!.SlantRange;
@@ -229,9 +232,10 @@ public partial class BeamStation : StationView
             new((float)(s * Math.Cos(el)), (float)(s * Math.Sin(el))),
         };
         VPlane.FiredHit = r.Score.Hit;
-        VPlane.QueueRedraw();
+        VPlane.BeginArcAnim();
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
+        StartCooldown(45.0);
         if (r.Score.Hit) AwardCareer(1100);
         string heading = r.Score.Hit ? "◆ TARGET NEUTRALISED" : (r.Score.OnAxis ? "△ UNDER-POWERED" : "△ OFF-AXIS");
         SetLastShot(heading, acc,
@@ -256,17 +260,5 @@ public partial class BeamStation : StationView
                 ("PULSE ENERGY", $"≥ {t.KillEnergyJoules / 1e9:0.0} GJ", P.Text),
             },
             "one valid firing solution shown.");
-    }
-
-    private Control WrapMetric(string caption, Label value)
-    {
-        var box = Ui.Panel(P.PanelDeep, P.BorderSoft, pad: 9, borderW: 0);
-        box.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
-        col.AddChild(Ui.Text(caption, P.Faint, 8));
-        col.AddChild(value);
-        box.AddChild(col);
-        return box;
     }
 }
