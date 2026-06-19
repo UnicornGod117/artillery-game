@@ -7,6 +7,9 @@ namespace FiringSolution.Core;
 /// </summary>
 public static class Constants
 {
+    public const string Version = "V1.0";
+
+
     // Mechanics
     public const double G0 = 9.80665;          // standard gravity, m/s^2
     public const double G = 6.67430e-11;       // gravitational constant, m^3 kg^-1 s^-2
