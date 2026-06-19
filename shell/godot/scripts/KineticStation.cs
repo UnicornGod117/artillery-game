@@ -322,22 +322,36 @@ public partial class KineticStation : StationView
             return;
         }
 
-        // Calibration: don't hand over the exact range/line error. Report what the
-        // spotter at OP-1 sees instead — the round's range & bearing FROM the OP and how
-        // far off the target it looked from there — and let the player triangulate.
-        var o = _mission.KineticObserved!;
+        // Calibration: don't hand over the exact gun-frame range/line error. Report what
+        // the spotter at OP-1 actually SEES — the round's range & bearing from the OP, and
+        // where it fell relative to the target (line + depth) — and let the player
+        // triangulate. The spotter watches REALITY, so it references the TRUE target, not
+        // the noisy intel coordinate: that's what lets it walk you off the triangulation
+        // error. (Referencing the observed target made a shot laid on the given coordinate
+        // read as "0.0° on" yet still miss — the loop could never correct itself.)
+        var trueT = _mission.KineticTarget!;
         Vector2 spot = Polar(_spotRange, _spotBearing);
         Vector2 impact = Polar(r.Trajectory.Impact.Range, r.Trajectory.Impact.Bearing);
-        Vector2 tgt = Polar(o.Range, o.Bearing);
+        Vector2 tgt = new((float)trueT.Position.X, (float)trueT.Position.Y);
         Vector2 sToImpact = impact - spot;
         Vector2 sToTgt = tgt - spot;
 
         double opRange = sToImpact.Length();
         double opBrg = Bearing(sToImpact);
         double angOff = AngleBetween(sToTgt, sToImpact);
-        // Sign: which side of the OP→target line the round fell (spotter's view).
         double cross = sToTgt.X * sToImpact.Y - sToTgt.Y * sToImpact.X;
-        string side = cross > 0 ? "RIGHT of tgt" : cross < 0 ? "LEFT of tgt" : "on tgt line";
+
+        // Resolve the spotter's view into a tangible LINE (cross-range past the target) and
+        // DEPTH (near/far along OP-1's sightline) bracket, thresholded by the splash radius
+        // so a near-miss on one axis can't masquerade as a hit. A pure depth miss now reads
+        // "ON LINE · BEYOND tgt" instead of a deceptive "0.0°".
+        double splash = _mission.Splash;
+        double lateral = opRange * Math.Sin(Constants.DegToRad(angOff));
+        string lineWord = lateral < splash ? "ON LINE"
+            : (cross > 0 ? $"{lateral:0} m RIGHT" : $"{lateral:0} m LEFT");
+        double depth = opRange - sToTgt.Length();
+        string depthWord = Math.Abs(depth) < splash ? "ON RANGE"
+            : depth > 0 ? "BEYOND tgt" : "NEAR side";
 
         SetLastShot("△ CALIBRATION SHOT", acc,
             new[]
@@ -345,9 +359,9 @@ public partial class KineticStation : StationView
                 ("SHOT NO.", ShotNo.ToString("00"), P.Text),
                 ("OP-1 → IMPACT", $"{opRange / 1000:0.00} km", P.Text),
                 ("OP-1 BEARING", $"{opBrg:0.0}°", P.Text),
-                ("OFF TARGET", $"{angOff:0.0}° {side}", acc),
+                ("FALL OF SHOT", $"{lineWord} · {depthWord}", acc),
             },
-            "spotter report — triangulate the correction from OP-1.");
+            "OP-1 watches the real target — correct line & depth from its grid position.");
     }
 
     /// <summary>Gun-relative polar + height → absolute battlespace coordinate (ENU metres).</summary>
