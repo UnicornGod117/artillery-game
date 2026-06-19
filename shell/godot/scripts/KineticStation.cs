@@ -289,7 +289,6 @@ public partial class KineticStation : StationView
         Board.FiredRange = r.Trajectory.Impact.Range;
         Board.FiredBearing = r.Trajectory.Impact.Bearing;
         Board.FiredHit = r.Score.Hit;
-        Board.BeginImpactAnim();
 
         var arc = new List<Vector2>();
         double arcMinAlt = 0;
@@ -304,7 +303,8 @@ public partial class KineticStation : StationView
         double floor = lo < 0 ? lo - Math.Abs(lo) * 0.1 - 50 : 0;
         VPlane.SetScale(Math.Max(_mission.KineticTarget!.Range, r.Trajectory.Impact.Range) * 1.1,
                         Math.Max(r.Trajectory.Apex * 1.2, 500), floor);
-        VPlane.BeginArcAnim();
+        // One sim clock drives both views over the round's REAL time of flight.
+        BeginShotAnimation(r.Trajectory.Impact.Time);
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
         StartCooldown(45.0);

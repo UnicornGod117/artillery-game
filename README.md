@@ -59,9 +59,9 @@ Mission m = GameEngine.GenerateMission(
 KineticResult r = GameEngine.FireKinetic(m, azimuth: 41.7, elevation: 38.0, charge: 5);
 // r.Trajectory.Impact, r.Score.Miss / RangeError / LineError / Hit
 
-// the beam commits a pointing + a particle SPEED β (v/c), not an energy:
+// the beam commits a pointing + a launch SPEED β (v/c); the dilated fuse detonates at βγcτ:
 BeamResult b = GameEngine.FireBeam(m, azimuth: 41.7, elevation: 12.0, beta: 0.937);
-// b.Shot.PulseEnergyJoules (= N·(γ−1)m₀c²), b.Score.EnergyError / OnAxis / Hit
+// b.Score.DetonationDistance, b.Score.RangeError (d − R) / OnAxis / Hit
 ```
 
 ## Physics scope (design §7)
@@ -77,12 +77,15 @@ At **Medium II** the air density is held at the gun-site value, so drag is stead
 the crosswind deflection is solvable per-axis. **Hard** lets density vary along the arc
 (`ρ(h)`), coupling drag to altitude and gravity — the genuinely non-analytic regime.
 
-The relativistic beam is energy/γ-led (lead ≈ 0 at near-c), scored on two
-independent gates: pointing accuracy **and** delivered pulse energy inside a kill
-**window**. You don't set the energy directly — you dial the particle **speed β**
-(as a % of c) and the pulse delivers `N·(γ−1)·m₀c²`. So you solve the speed for the
-required energy (`γ = 1 + E/(N·m₀c²)`, `β = √(1 − 1/γ²)`); over-cooking β
-over-penetrates and misses, so "just max it out" doesn't win.
+The relativistic beam is a **long-range (light-second) proper-time warhead intercept**
+(lead ≈ 0 at near-c), scored on two independent gates: pointing accuracy **and**
+detonation range. You don't set an energy — the warhead's fuse fires after `τ` seconds
+on its **own** clock, and time dilation stretches that to `γ·τ` for us, so it detonates
+at `d = β·γ·c·τ`. You dial the launch **speed β** (as a % of c) so the dilated fuse lands
+the blast on the target: `k = R/(c·τ)` (= R in light-seconds ÷ τ), `β = k/√(1 + k²)`.
+Too slow detonates short, too fast overshoots, so "just max it out" doesn't win. Because
+the flight is now seconds-to-minutes, the fly-out animation runs over the **real
+(time-scaled) flight time**, with a `1×–15×` playback fast-forward.
 
 ## Build & test
 
