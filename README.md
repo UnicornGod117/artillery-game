@@ -166,7 +166,14 @@ The fire→score→observe loop is wired, and these instruments are now function
   bearing, LOS-derived altitude, air data, local g) instead of hard-coded values.
 - **Stated input precision** on every field and observed readout.
 
-Still placeholder: the **reload/cooldown** bar (no throttling mechanic yet) and the
-**Z-correction** input (reserved for higher breadth tiers per design §5, not used by
-the current planar solve). Reconstructions of both stations are in
-[`docs/mockups/`](docs/mockups/).
+Also wired: a **difficulty selector** in the top bar (cycles the four tiers and
+regenerates in place), a **munition selector** on the kinetic station, a real
+**reload cooldown** (the fire button locks while the RELOAD bar refills) and a
+post-fire **fly-out animation** of the round on both the board and the vertical
+plane. A miss now reads back as a **spotter (OP-1) report** — range and bearing to
+the round from the observation post, and how far off the target it looked from there
+— so the correction must be triangulated rather than handed over.
+
+Still placeholder: the **Z-correction** input (reserved for higher breadth tiers per
+design §5, not used by the current planar solve). Reconstructions of both stations
+are in [`docs/mockups/`](docs/mockups/).

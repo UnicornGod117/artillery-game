@@ -29,6 +29,12 @@ public partial class PlottingBoard : Control
     public double TargetRange = 8600, TargetBearing = 41.7;
     public string TargetLabel = "TGT";
 
+    // Spotter / observation post — a known friendly position the player triangulates
+    // a correction from. Set by the station; drawn so the board geometry is legible.
+    public bool HasSpotter = false;
+    public double SpotterRange, SpotterBearing;
+    public string SpotterLabel = "OP-1";
+
     // Player aim (live input).
     public double AimAzimuth = 42.0;
 
@@ -39,9 +45,13 @@ public partial class PlottingBoard : Control
     public bool IsBeam = false;
 
     // Measurement tools.
-    public enum Tool { Pan, Ruler, Protractor, Pen }
+    public enum Tool { Pan, Ruler, Protractor, Pen, Erase }
     public Tool ActiveTool = Tool.Pan;
-    public bool ShowGrid = false;
+    public bool ShowGrid = true;
+
+    // Impact fly-out animation (the dashed line grows from the gun to the impact).
+    private float _impactAnim = 1f;
+    private bool _animating = false;
 
     // Pan / zoom state.
     private Vector2 _pan = Vector2.Zero;
@@ -54,6 +64,9 @@ public partial class PlottingBoard : Control
     private readonly List<(Vector2 a, Vector2 b)> _rulers = new();
     private readonly List<(Vector2 v, Vector2 a, Vector2 b)> _angles = new();
     private readonly List<List<Vector2>> _pens = new();
+    // Insertion order across all three lists, so UNDO can drop the most recent thing
+    // drawn (0 = ruler, 1 = angle, 2 = pen).
+    private readonly List<int> _order = new();
     private Vector2? _pendingRuler;
     private readonly List<Vector2> _pendingAngle = new();
     private List<Vector2>? _penCurrent;
@@ -99,14 +112,34 @@ public partial class PlottingBoard : Control
 
     public void ClearMeasurements()
     {
-        _rulers.Clear(); _angles.Clear(); _pens.Clear();
+        _rulers.Clear(); _angles.Clear(); _pens.Clear(); _order.Clear();
         _pendingRuler = null; _pendingAngle.Clear(); _penCurrent = null;
+        QueueRedraw();
+    }
+
+    /// <summary>Remove the most recently drawn measurement (ruler / angle / pen).</summary>
+    public void Undo()
+    {
+        // Drop anything mid-construction first, so UNDO always has an obvious effect.
+        if (_pendingRuler != null) { _pendingRuler = null; QueueRedraw(); return; }
+        if (_pendingAngle.Count > 0) { _pendingAngle.Clear(); QueueRedraw(); return; }
+        if (_penCurrent != null) { _penCurrent = null; QueueRedraw(); return; }
+
+        if (_order.Count == 0) return;
+        int kind = _order[^1];
+        _order.RemoveAt(_order.Count - 1);
+        switch (kind)
+        {
+            case 0 when _rulers.Count > 0: _rulers.RemoveAt(_rulers.Count - 1); break;
+            case 1 when _angles.Count > 0: _angles.RemoveAt(_angles.Count - 1); break;
+            case 2 when _pens.Count > 0: _pens.RemoveAt(_pens.Count - 1); break;
+        }
         QueueRedraw();
     }
 
     private void FinishPen()
     {
-        if (_penCurrent is { Count: >= 2 }) _pens.Add(_penCurrent);
+        if (_penCurrent is { Count: >= 2 }) { _pens.Add(_penCurrent); _order.Add(2); }
         _penCurrent = null;
     }
 
@@ -153,17 +186,70 @@ public partial class PlottingBoard : Control
         {
             case Tool.Ruler:
                 if (_pendingRuler is null) _pendingRuler = m;
-                else { _rulers.Add((_pendingRuler.Value, m)); _pendingRuler = null; }
+                else { _rulers.Add((_pendingRuler.Value, m)); _order.Add(0); _pendingRuler = null; }
                 break;
             case Tool.Protractor:
                 _pendingAngle.Add(m);
                 if (_pendingAngle.Count == 3)
-                { _angles.Add((_pendingAngle[0], _pendingAngle[1], _pendingAngle[2])); _pendingAngle.Clear(); }
+                { _angles.Add((_pendingAngle[0], _pendingAngle[1], _pendingAngle[2])); _order.Add(1); _pendingAngle.Clear(); }
                 break;
             case Tool.Pen:
                 (_penCurrent ??= new List<Vector2>()).Add(m);
                 break;
+            case Tool.Erase:
+                EraseNear(m);
+                break;
         }
+    }
+
+    /// <summary>Delete the measurement nearest the click, within a small pick radius.</summary>
+    private void EraseNear(Vector2 m)
+    {
+        float pick = 14f / K;             // ~14 px, expressed in metres at the current zoom
+        float best = pick;
+        int bestKind = -1, bestIdx = -1;
+
+        for (int i = 0; i < _rulers.Count; i++)
+        {
+            float d = DistToSegment(m, _rulers[i].a, _rulers[i].b);
+            if (d < best) { best = d; bestKind = 0; bestIdx = i; }
+        }
+        for (int i = 0; i < _angles.Count; i++)
+        {
+            var (v, a, b) = _angles[i];
+            float d = Mathf.Min(DistToSegment(m, v, a), DistToSegment(m, v, b));
+            if (d < best) { best = d; bestKind = 1; bestIdx = i; }
+        }
+        for (int i = 0; i < _pens.Count; i++)
+        {
+            var poly = _pens[i];
+            for (int j = 1; j < poly.Count; j++)
+            {
+                float d = DistToSegment(m, poly[j - 1], poly[j]);
+                if (d < best) { best = d; bestKind = 2; bestIdx = i; }
+            }
+        }
+
+        if (bestKind < 0) return;
+        switch (bestKind)
+        {
+            case 0: _rulers.RemoveAt(bestIdx); break;
+            case 1: _angles.RemoveAt(bestIdx); break;
+            case 2: _pens.RemoveAt(bestIdx); break;
+        }
+        // Forget the matching entry in the undo order (latest of that kind is closest).
+        for (int i = _order.Count - 1; i >= 0; i--)
+            if (_order[i] == bestKind) { _order.RemoveAt(i); break; }
+        QueueRedraw();
+    }
+
+    private static float DistToSegment(Vector2 p, Vector2 a, Vector2 b)
+    {
+        Vector2 ab = b - a;
+        float len2 = ab.LengthSquared();
+        if (len2 < 1e-6f) return (p - a).Length();
+        float t = Mathf.Clamp((p - a).Dot(ab) / len2, 0f, 1f);
+        return (p - (a + ab * t)).Length();
     }
 
     private void ToolCancel()
@@ -178,6 +264,19 @@ public partial class PlottingBoard : Control
 
     public void ResetView() { _pan = Vector2.Zero; _zoom = 1f; QueueRedraw(); }
     public void ZoomBy(float m) { _zoom = Mathf.Clamp(_zoom * m, 0.6f, 3f); QueueRedraw(); }
+
+    // ----- impact animation -------------------------------------------------
+
+    /// <summary>Start the post-fire fly-out: the round travels from the gun to the impact.</summary>
+    public void BeginImpactAnim() { _impactAnim = 0f; _animating = true; SetProcess(true); QueueRedraw(); }
+
+    public override void _Process(double delta)
+    {
+        if (!_animating) { SetProcess(false); return; }
+        _impactAnim += (float)delta / 0.55f;   // ~0.55 s flight
+        if (_impactAnim >= 1f) { _impactAnim = 1f; _animating = false; }
+        QueueRedraw();
+    }
 
     // ----- drawing ----------------------------------------------------------
 
@@ -199,6 +298,10 @@ public partial class PlottingBoard : Control
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
+        // Bearing ring: cardinal + 30° ticks around the outermost ring, so the board
+        // reads as a real azimuth dial rather than bare circles.
+        DrawBearingTicks(gunC, (float)(RingCount * RingStepM) * K, font);
+
         // Gun emplacement.
         DrawLine(gunC + new Vector2(-8, 0), gunC + new Vector2(8, 0), P.AccentDim, 1);
         DrawLine(gunC + new Vector2(0, -8), gunC + new Vector2(0, 8), P.AccentDim, 1);
@@ -218,24 +321,44 @@ public partial class PlottingBoard : Control
         DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.0}°",
             HorizontalAlignment.Left, -1, 8, P.Accent);
 
+        // Spotter / observation post.
+        if (HasSpotter)
+        {
+            Vector2 sp = World(SpotterRange, SpotterBearing);
+            DrawArc(sp, 6, 0, Mathf.Tau, 18, P.TextDim, 1.2f, true);
+            DrawLine(sp + new Vector2(-3, 0), sp + new Vector2(3, 0), P.TextDim, 1);
+            DrawLine(sp + new Vector2(0, -3), sp + new Vector2(0, 3), P.TextDim, 1);
+            DrawString(font, sp + new Vector2(9, -2), SpotterLabel, HorizontalAlignment.Left, -1, 8, P.TextDim);
+        }
+
         // Observed target marker.
         Vector2 tgt = World(TargetRange, TargetBearing);
         DrawTargetMark(tgt, P.Red);
         DrawString(font, tgt + new Vector2(10, -2), $"{TargetLabel} · {TargetRange / 1000:0.00}km",
             HorizontalAlignment.Left, -1, 8, P.Red);
 
-        // Fired result.
+        // Fired result — animated fly-out from the gun, then the impact mark.
         if (HasFired)
         {
             Vector2 impact = World(FiredRange, FiredBearing);
             Color c = FiredHit ? P.Accent : P.Red;
-            DrawDashed(gunC, impact, c, 1.6f, 9, 5);
-            float rad = FiredHit ? 9 : 14;
-            DrawArc(impact, rad, 0, Mathf.Tau, 32, c, 1.2f, true);
-            DrawLine(impact + new Vector2(-6, -6), impact + new Vector2(6, 6), c, 1.8f);
-            DrawLine(impact + new Vector2(-6, 6), impact + new Vector2(6, -6), c, 1.8f);
-            if (!FiredHit)
-                DrawDashed(impact, tgt, P.Red, 1f, 2, 3);
+            Vector2 cur = gunC + (impact - gunC) * _impactAnim;
+            DrawDashed(gunC, cur, c, 1.6f, 9, 5);
+            if (_animating)
+            {
+                // The round in flight.
+                DrawCircle(cur, 3.5f, c);
+                DrawArc(cur, 6, 0, Mathf.Tau, 16, c, 1f, true);
+            }
+            else
+            {
+                float rad = FiredHit ? 9 : 14;
+                DrawArc(impact, rad, 0, Mathf.Tau, 32, c, 1.2f, true);
+                DrawLine(impact + new Vector2(-6, -6), impact + new Vector2(6, 6), c, 1.8f);
+                DrawLine(impact + new Vector2(-6, 6), impact + new Vector2(6, -6), c, 1.8f);
+                if (!FiredHit)
+                    DrawDashed(impact, tgt, P.Red, 1f, 2, 3);
+            }
         }
 
         DrawMeasurements(font);
@@ -258,14 +381,16 @@ public partial class PlottingBoard : Control
             Tool.Ruler => "RULER · click 2 points · right-click cancels",
             Tool.Protractor => "PROTRACTOR · click vertex + 2 arms · right-click cancels",
             Tool.Pen => "PEN · click to add points · right-click finishes",
+            Tool.Erase => "ERASE · click a measurement to delete it",
             _ => "PAN · drag to move · scroll to zoom",
         };
         DrawString(font, new Vector2(10, 16), hint, HorizontalAlignment.Left, -1, 8, P.TextDim);
-        if (_hasHover && ActiveTool != Tool.Pan)
+        // Live cursor readout — always on, so the board is never a mystery to read.
+        if (_hasHover)
         {
             double cr = _hoverM.Length();
             DrawString(font, new Vector2(10, Size.Y - 8),
-                $"CURSOR  {cr / 1000:0.00} km  ·  {Bearing(_hoverM):0.0}° from gun",
+                $"CURSOR  {cr / 1000:0.00} km  ·  BRG {Bearing(_hoverM):0.0}°  ·  E {_hoverM.X / 1000:+0.00;-0.00} N {_hoverM.Y / 1000:+0.00;-0.00} km",
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
@@ -277,12 +402,44 @@ public partial class PlottingBoard : Control
     {
         float step = (float)RingStepM * K;
         if (step < 6) return;
+        var font = ThemeDB.FallbackFont;
+        // Clamp the gun axis on-screen so the km labels stay visible while panning.
+        float axisY = Mathf.Clamp(gunC.Y, 12, Size.Y - 4);
+        float axisX = Mathf.Clamp(gunC.X, 16, Size.X - 28);
         for (int i = -24; i <= 24; i++)
         {
             float x = gunC.X + i * step;
-            if (x >= 0 && x <= Size.X) DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), P.BorderSoft, 1);
+            if (x >= 0 && x <= Size.X)
+            {
+                DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), P.BorderSoft, 1);
+                if (i != 0)
+                    DrawString(font, new Vector2(x + 2, axisY - 3), $"{i * RingStepM / 1000:0}",
+                        HorizontalAlignment.Left, -1, 7, P.Faint);
+            }
             float y = gunC.Y + i * step;
-            if (y >= 0 && y <= Size.Y) DrawLine(new Vector2(0, y), new Vector2(Size.X, y), P.BorderSoft, 1);
+            if (y >= 0 && y <= Size.Y)
+            {
+                DrawLine(new Vector2(0, y), new Vector2(Size.X, y), P.BorderSoft, 1);
+                if (i != 0)
+                    DrawString(font, new Vector2(axisX, y - 3), $"{-i * RingStepM / 1000:0}",
+                        HorizontalAlignment.Left, -1, 7, P.Faint);
+            }
+        }
+    }
+
+    /// <summary>Cardinal letters + 30° azimuth ticks around the outermost ring.</summary>
+    private void DrawBearingTicks(Vector2 gunC, float radius, Font font)
+    {
+        if (radius < 24) return;
+        for (int b = 0; b < 360; b += 30)
+        {
+            float br = Mathf.DegToRad(b);
+            Vector2 dir = new(Mathf.Sin(br), -Mathf.Cos(br));
+            DrawLine(gunC + dir * radius, gunC + dir * (radius + 6), P.Border, 1);
+            string lbl = b switch { 0 => "N", 90 => "E", 180 => "S", 270 => "W", _ => b.ToString("000") };
+            bool card = b % 90 == 0;
+            DrawString(font, gunC + dir * (radius + 16) + new Vector2(-7, 4), lbl,
+                HorizontalAlignment.Left, -1, card ? 9 : 7, card ? P.TextDim : P.Faint);
         }
     }
 
