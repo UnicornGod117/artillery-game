@@ -97,6 +97,51 @@ scoring with the dilation gate; the shell's flyout becomes flight-time-driven.
 
 ---
 
+### ★ Long-range relativistic battlespace (beam / particle station)
+
+The relativistic particle station's battlespace **grows by orders of magnitude** — from
+today's tens-of-km tactical box to long-range / orbital distances (thousands to millions
+of km, ultimately light-seconds). This is a prerequisite, not a flourish:
+
+- **Why:** only at these ranges is the pulse / warhead flight time `t_flight = R/(βc)`
+  long enough (seconds to minutes) to **simulate, animate, and reason about** — at tens
+  of km it's sub-millisecond. It's also the only regime where the **proper-time /
+  time-dilation gap** (`τ = t/γ`) is large enough to *be* the puzzle rather than an
+  invisible correction.
+- **Consequences:** coordinates scale to km / Mm (or light-seconds); the board's
+  (already widened) zoom and scale must span the larger box; the β / energy bands and the
+  generated `τ_fuse` retune to the new ranges. The kinetic station can stay tactical — its
+  own flight times are already human-scale.
+- This is what makes accurate **simulation time** possible on the beam station at all, and
+  it's the same move that unlocks the timed-warhead intercept above.
+
+### ‼ Cross-cutting principle: one physical clock (real, scaled time)
+
+*This is now a hard architectural rule, not a nice-to-have — it is the foundation moving
+targets stand on, and the reason the battlespace scale-up above matters.*
+
+Every time-dependent quantity in the game must advance on **one shared physical clock**:
+real elapsed time multiplied by a single global *sim-seconds-per-real-second* scale.
+
+- **No more per-effect fixed durations** (today's hard-coded `0.55 s` flyout) or ad-hoc
+  timers. Projectile / pulse travel, the warhead's proper-time fuse, time dilation (`γ`),
+  and — next — **target motion** are all functions of that one clock; the renderer merely
+  samples it.
+- **Why it's imperative for moving targets:** a solvable intercept requires the target's
+  position, the projectile's flight time, and the firing clock to share the *same*
+  consistent time base. If the animation's time ≠ the physics' time, the lead / intercept
+  the player solves for won't actually land. Driving everything from real (scaled) time
+  guarantees the world the player computes against and the world they watch are the *same
+  world* — physically consistent time logic, everywhere.
+- **Real time ideally**; a single fixed scale only where real time is impractical (e.g.
+  compressing hours of orbital transit) — but *one* scale, applied uniformly to every
+  shot, fuse and mover so durations stay comparable and solutions stay valid.
+- Practical shape: a single sim clock owns `t`; flight time, detonation, dilation and
+  target kinematics are pure functions of `t`. The flight-time-driven flyout required by
+  the timed-intercept section is just the first instance of this rule.
+
+---
+
 ## Deferred (from design §12 and this build)
 
 - ~~**Difficulty-selector UI** in the shell~~ — **shipped** (top-bar tier selector).
