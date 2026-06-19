@@ -28,7 +28,7 @@ if %ERRORLEVEL% NEQ 0 (
 :: ── Build ─────────────────────────────────────────────────────────────────────
 echo.
 echo  Building game...
-dotnet build "%CSPROJ%" -c Debug --nologo -v quiet
+dotnet build "%CSPROJ%" -c Debug --nologo -v quiet --no-incremental
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo  ERROR: Build failed. See errors above.
