@@ -26,9 +26,10 @@ public class RelativisticTests
     public void ParticleKE_IsPositive_AndExceedsNewtonianAtHighBeta()
     {
         var w = Munitions.ProtonFocused();
-        double relKE = Relativistic.ParticleKineticEnergy(w.RestEnergyJoules, w.Beta);
+        const double beta = 0.94;
+        double relKE = Relativistic.ParticleKineticEnergy(w.RestEnergyJoules, beta);
         double m0 = w.RestEnergyJoules / (Constants.C * Constants.C);
-        double v = w.Beta * Constants.C;
+        double v = beta * Constants.C;
         double newtonKE = 0.5 * m0 * v * v;
 
         Assert.True(relKE > 0);
@@ -36,10 +37,17 @@ public class RelativisticTests
     }
 
     [Fact]
+    public void PulseEnergy_RisesWithBeta()
+    {
+        var w = Munitions.ProtonFocused();
+        Assert.True(Relativistic.PulseEnergy(w, 0.96) > Relativistic.PulseEnergy(w, 0.90));
+    }
+
+    [Fact]
     public void Beam_FlightTime_IsSubMillisecondOverEngagementRange()
     {
         var w = Munitions.ProtonFocused();
-        var shot = Relativistic.SimulateBeam(w, targetSlantRange: 40000, azimuth: 0, elevation: 10, pulseEnergyJoules: 4e9);
+        var shot = Relativistic.SimulateBeam(w, targetSlantRange: 40000, azimuth: 0, elevation: 10, beta: 0.94);
         Assert.True(shot.FlightTime < 1e-3);
     }
 }

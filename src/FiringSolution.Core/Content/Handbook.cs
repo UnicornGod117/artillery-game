@@ -41,6 +41,8 @@ public static class Handbook
         {
             new HandbookEntry("Lorentz factor", "γ = 1 / √(1 − β²),  β = v/c"),
             new HandbookEntry("Relativistic KE", "E_k = (γ − 1)·m₀·c²"),
+            new HandbookEntry("Pulse energy (N particles)", "E = N·(γ − 1)·m₀·c²"),
+            new HandbookEntry("Speed for an energy", "γ = 1 + E/(N·m₀c²),  β = √(1 − 1/γ²)"),
             new HandbookEntry("Relativistic momentum", "p = γ·m₀·v"),
         }),
         new HandbookSection("Vectors", new[]
@@ -58,7 +60,7 @@ public static class Handbook
         "medium1" => "Full SUVAT both axes; account for g(h) and target altitude. Energy via ½mv².",
         "medium2" => "Decompose crosswind into along/cross components; lead by flight time.",
         "hard" => "Drag is non-analytic — integrate numerically. ρ(h) feeds drag and couples to g(h).",
-        "beam" => "Lead ≈ 0 (near-c). Point on the LOS bearing/elevation; deliver E ≥ kill threshold via (γ−1)m₀c².",
+        "beam" => "Lead ≈ 0 (near-c). Work bearing/elevation from the coordinates, then solve the SPEED: γ = 1 + E/(N·m₀c²), β = √(1 − 1/γ²). The energy is a WINDOW — land inside it, don't overshoot.",
         _ => "Read the board. Every instrument gives measurements, never solutions.",
     };
 }

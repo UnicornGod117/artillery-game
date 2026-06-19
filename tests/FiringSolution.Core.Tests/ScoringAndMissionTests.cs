@@ -39,20 +39,31 @@ public class ScoringTests
     }
 
     [Fact]
-    public void Beam_RequiresBothPointingAndEnergy()
+    public void Beam_RequiresPointingAndAnEnergyWindow()
     {
         var w = Content.Munitions.ProtonFocused();
-        // On axis but under-powered → miss.
-        var weak = Relativistic.SimulateBeam(w, 40000, 100, 12, 2.0e9);
-        var weakScore = Scoring.ScoreBeam(weak, 100, 12, 100, 12, 40000, 3.5e9, 0.18);
+        double requiredJ = Relativistic.PulseEnergy(w, 0.94); // the β the kill is tuned to
+        const double tol = 0.1e9;
+
+        // On axis but under-powered (β too low) → miss.
+        var weak = Relativistic.SimulateBeam(w, 40000, 100, 12, 0.90);
+        var weakScore = Scoring.ScoreBeam(weak, 100, 12, 100, 12, 40000, requiredJ, tol, 0.18);
         Assert.True(weakScore.OnAxis);
         Assert.False(weakScore.EnergyOk);
         Assert.False(weakScore.Hit);
 
-        // On axis and powered → hit.
-        var good = Relativistic.SimulateBeam(w, 40000, 100, 12, 4.0e9);
-        var goodScore = Scoring.ScoreBeam(good, 100, 12, 100, 12, 40000, 3.5e9, 0.18);
+        // On axis at the solved β → hit.
+        var good = Relativistic.SimulateBeam(w, 40000, 100, 12, 0.94);
+        var goodScore = Scoring.ScoreBeam(good, 100, 12, 100, 12, 40000, requiredJ, tol, 0.18);
         Assert.True(goodScore.Hit);
+
+        // On axis but OVER-powered (β cranked to the limit) → miss: it's a window, not a
+        // floor, so "max it out and win" overshoots.
+        var hot = Relativistic.SimulateBeam(w, 40000, 100, 12, 0.98);
+        var hotScore = Scoring.ScoreBeam(hot, 100, 12, 100, 12, 40000, requiredJ, tol, 0.18);
+        Assert.True(hotScore.OnAxis);
+        Assert.False(hotScore.EnergyOk);
+        Assert.False(hotScore.Hit);
     }
 }
 

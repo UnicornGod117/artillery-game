@@ -111,17 +111,31 @@ public partial class KineticStation : StationView
         else
             v.AddChild(Ui.Text("Vacuum · flat ground · constant g — no air, no wind.", P.Faint, 9));
 
-        // --- Target observed ---
+        // --- Your position (gun) --- given as an absolute battlespace coordinate; the
+        // gun is no longer the origin, so range/bearing/drop are all yours to work out.
+        Vec3 g = _mission.GunOrigin;
+        Vec3 tgtAbs = AbsCoord(o.Range, o.Bearing, o.Altitude);
+        Vec3 opAbs = AbsCoord(_spotRange, _spotBearing, 0);
+
+        v.AddChild(Ui.SectionHeader(P, "Your Position — Gun", P.Accent, "GRID"));
+        v.AddChild(MetricGrid(new[]
+        {
+            ("EASTING · km", $"{g.X / 1000:0.00}"),
+            ("NORTHING · km", $"{g.Y / 1000:0.00}"),
+            ("ALTITUDE · m", $"{g.Z:0}"),
+        }, new Color("cdbf9f"), 14));
+
+        // --- Target observed --- a coordinate, NOT a bearing & range. Work the geometry.
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SPOTTER"));
         var tgtCells = new List<(string, string)>
         {
-            ("GROUND RANGE · 0.01 km", $"{o.Range / 1000:0.00} km"),
-            ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
+            ("EASTING · km", $"{tgtAbs.X / 1000:0.00}"),
+            ("NORTHING · km", $"{tgtAbs.Y / 1000:0.00}"),
         };
-        if (_mission.TierIndex >= 1) tgtCells.Add(("TGT ALTITUDE · 1 m", $"{o.Altitude:+0;-0;0} m"));
+        if (_mission.TierIndex >= 1) tgtCells.Add(("ALTITUDE · m", $"{tgtAbs.Z:0}"));
         tgtCells.Add(("MOTION", "STATIC"));
         v.AddChild(MetricGrid(tgtCells.ToArray(), new Color("e9ddc6")));
-        v.AddChild(Ui.Text($"↳ OP-1 at {_spotRange / 1000:0.00} km · brg {_spotBearing:0.0}°. Range & drop are yours to solve.", P.Faint, 9));
+        v.AddChild(Ui.Text($"↳ OP-1 at grid E {opAbs.X / 1000:0.00} · N {opAbs.Y / 1000:0.00} km. Range, bearing & drop are yours to solve.", P.Faint, 9));
 
         // --- Weapon configuration --- click the munition to cycle the loaded round.
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
@@ -235,6 +249,7 @@ public partial class KineticStation : StationView
         Board.TargetBearing = _mission.KineticObserved!.Bearing;
         Board.TargetLabel = "TGT · ARMOR";
         Board.AimAzimuth = _az;
+        Board.GunOriginM = new Vector2((float)_mission.GunOrigin.X, (float)_mission.GunOrigin.Y);
         Board.HasSpotter = true;
         Board.SpotterRange = _spotRange;
         Board.SpotterBearing = _spotBearing;
@@ -333,6 +348,14 @@ public partial class KineticStation : StationView
                 ("OFF TARGET", $"{angOff:0.0}° {side}", acc),
             },
             "spotter report — triangulate the correction from OP-1.");
+    }
+
+    /// <summary>Gun-relative polar + height → absolute battlespace coordinate (ENU metres).</summary>
+    private Vec3 AbsCoord(double range, double bearingDeg, double altAboveGun)
+    {
+        double br = Constants.DegToRad(bearingDeg);
+        var g = _mission.GunOrigin;
+        return new Vec3(g.X + range * Math.Sin(br), g.Y + range * Math.Cos(br), g.Z + altAboveGun);
     }
 
     /// <summary>Gun-relative polar (range m, compass bearing deg) → ENU east/north metres.</summary>
