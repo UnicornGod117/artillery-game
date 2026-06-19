@@ -292,7 +292,7 @@ public partial class KineticStation : StationView
         VPlane.BeginArcAnim();
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
-        StartCooldown(3.5);
+        StartCooldown(45.0);
 
         if (r.Score.Hit)
         {
