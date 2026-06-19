@@ -1,3 +1,4 @@
+using FiringSolution.Core;
 using Godot;
 
 namespace FiringSolution.Shell;
@@ -28,6 +29,12 @@ public partial class Main : Control
         _switch.AddThemeColorOverride("font_color", new Color("e7e5df"));
         _switch.AddThemeFontSizeOverride("font_size", 11);
         _switch.Pressed += Toggle;
+
+        var versionLabel = new Label { Text = Constants.Version };
+        versionLabel.AddThemeColorOverride("font_color", new Color("ffffff", 0.35f));
+        versionLabel.AddThemeFontSizeOverride("font_size", 10);
+        AddChild(versionLabel);
+        versionLabel.SetAnchorsAndOffsetsPreset(LayoutPreset.TopLeft, LayoutPresetMode.Minsize, 8);
 
         Swap();
         AddChild(_switch);
