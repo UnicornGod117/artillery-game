@@ -235,7 +235,7 @@ public partial class BeamStation : StationView
         VPlane.BeginArcAnim();
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
-        StartCooldown(4.0);
+        StartCooldown(45.0);
         if (r.Score.Hit) AwardCareer(1100);
         string heading = r.Score.Hit ? "◆ TARGET NEUTRALISED" : (r.Score.OnAxis ? "△ UNDER-POWERED" : "△ OFF-AXIS");
         SetLastShot(heading, acc,

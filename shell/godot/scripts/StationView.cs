@@ -48,6 +48,10 @@ public abstract partial class StationView : Control
             if (_reloadBar != null) _reloadBar.Value = 100;
             if (FireButton != null) { FireButton.Disabled = false; FireButton.Text = "◆  COMMIT & FIRE"; }
         }
+        else if (FireButton != null)
+        {
+            FireButton.Text = $"◆  RELOADING…  {System.Math.Ceiling(_cooldownLeft)}s";
+        }
     }
 
     /// <summary>Overridden by stations to advance their seed before a NEW MISSION rebuild.</summary>
