@@ -139,22 +139,23 @@ public partial class BeamStation : StationView
         // Beam parameters. Only the published specs are shown: the beam's β (a weapon
         // figure) and the kill threshold. γ and the rest are the player's to derive —
         // the panel no longer states what to solve for or pre-computes the Lorentz factor.
-        var reg = Ui.Panel(P.PanelDeep, P.Border, pad: 0, borderW: 1);
-        var rv = new VBoxContainer();
-        var rh = Ui.Panel(P.Bg, P.BorderSoft, pad: 9, borderW: 0);
-        var rhr = new HBoxContainer();
-        rhr.AddChild(Ui.Text("BEAM PARAMETERS", P.TextDim, 10));
-        rh.AddChild(rhr);
-        rv.AddChild(rh);
-        var rg = new GridContainer { Columns = 2 };
-        rg.AddThemeConstantOverride("h_separation", 1);
-        rg.AddThemeConstantOverride("v_separation", 1);
         double beta = _mission.BeamWeapon!.Beta;
+        var reg = Ui.Panel(P.PanelDeep, P.Border, pad: 12, borderW: 1);
+        var rv = new VBoxContainer();
+        rv.AddThemeConstantOverride("separation", 8);
+        rv.AddChild(Ui.Text("BEAM PARAMETERS", P.TextDim, 10));
+        rv.AddChild(MetricGrid(new[]
+        {
+            ("BEAM β", $"{beta:0.000} c"),
+            ("KILL THRESHOLD · GJ", $"≥ {_mission.BeamObserved!.KillEnergyGJ:0.0}"),
+        }, P.Text, 14));
+        // Live pulse-energy readout (echoes the player's input).
+        var pr = new HBoxContainer();
+        pr.AddChild(Ui.Text("PULSE ENERGY (set)", P.Faint, 9));
+        pr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         _enLabel = Ui.Text($"{_en:0.0} GJ", P.Accent, 14);
-        rg.AddChild(WrapMetric("BEAM β", Ui.Text($"{beta:0.000} c", P.Text, 14)));
-        rg.AddChild(WrapMetric("PULSE ENERGY (set)", _enLabel));
-        rg.AddChild(WrapMetric("KILL THRESHOLD", Ui.Text($"≥ {_mission.BeamObserved!.KillEnergyGJ:0.0} GJ", new Color("aebecb"), 14)));
-        rv.AddChild(rg);
+        pr.AddChild(_enLabel);
+        rv.AddChild(pr);
         reg.AddChild(rv);
         v.AddChild(reg);
 
@@ -259,17 +260,5 @@ public partial class BeamStation : StationView
                 ("PULSE ENERGY", $"≥ {t.KillEnergyJoules / 1e9:0.0} GJ", P.Text),
             },
             "one valid firing solution shown.");
-    }
-
-    private Control WrapMetric(string caption, Label value)
-    {
-        var box = Ui.Panel(P.PanelDeep, P.BorderSoft, pad: 9, borderW: 0);
-        box.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
-        col.AddChild(Ui.Text(caption, P.Faint, 8));
-        col.AddChild(value);
-        box.AddChild(col);
-        return box;
     }
 }
