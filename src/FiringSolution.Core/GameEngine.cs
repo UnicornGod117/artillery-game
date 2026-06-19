@@ -45,19 +45,37 @@ public static class GameEngine
         return FireKinetic(mission, new KineticSolution(azimuth, elevation, v0));
     }
 
-    /// <summary>Commit a beam firing solution: straight-ray SR model, scored on pointing + energy.</summary>
-    public static BeamResult FireBeam(Mission mission, double azimuth, double elevation, double pulseEnergyJoules)
+    /// <summary>
+    /// Commit a beam firing solution: straight-ray SR model, scored on pointing + energy.
+    /// The player supplies the beam SPEED β (v/c); the delivered pulse energy is derived
+    /// and checked against the kill window.
+    /// </summary>
+    public static BeamResult FireBeam(Mission mission, double azimuth, double elevation, double beta)
     {
         if (mission.WeaponKind != WeaponKind.Beam ||
             mission.BeamWeapon is null || mission.BeamTarget is null)
             throw new InvalidOperationException("Mission is not a beam mission.");
 
         var t = mission.BeamTarget;
-        var shot = Relativistic.SimulateBeam(mission.BeamWeapon, t.SlantRange, azimuth, elevation, pulseEnergyJoules);
+        var shot = Relativistic.SimulateBeam(mission.BeamWeapon, t.SlantRange, azimuth, elevation, beta);
         var score = Scoring.ScoreBeam(
             shot, azimuth, elevation, t.Bearing, t.LosElevation, t.SlantRange,
-            t.KillEnergyJoules, mission.AngularTolerance);
+            t.FuseProperTime, t.DetonationToleranceMeters, mission.AngularTolerance);
         return new BeamResult(shot, score);
+    }
+
+    /// <summary>
+    /// The beam "give up" escape hatch: solve the launch speed whose time-dilated fuse
+    /// detonates exactly on the target. k = R/(c·τ), β = k/√(1 + k²).
+    /// </summary>
+    public static double RevealBeamBeta(Mission mission)
+    {
+        if (mission.WeaponKind != WeaponKind.Beam ||
+            mission.BeamWeapon is null || mission.BeamTarget is null)
+            throw new InvalidOperationException("Mission is not a beam mission.");
+
+        return Relativistic.SpeedForFuseRange(
+            mission.BeamTarget.SlantRange, mission.BeamTarget.FuseProperTime);
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ public sealed record BeamShot(
     double Gamma,
     double Beta,
     double Speed,           // m/s
-    double PulseEnergyJoules,
+    double PulseEnergyJoules,// N·(γ-1)m₀c² delivered by the pulse, J
     double ParticleKE,      // (γ-1)m₀c², J
     double ParticleMomentum // γ·m₀·v, kg·m/s
 );
@@ -34,23 +34,52 @@ public static class Relativistic
         => Lorentz(beta) * restMassKg * (beta * Constants.C);
 
     /// <summary>
-    /// Simulate a beam shot as a straight ray at βc; reports flight time but lead
-    /// is negligible over engagement ranges.
+    /// Total energy a pulse of N particles delivers at speed β: N·(γ−1)·m₀c² (J).
+    /// </summary>
+    public static double PulseEnergy(BeamWeapon weapon, double beta)
+        => weapon.ParticleCount * ParticleKineticEnergy(weapon.RestEnergyJoules, beta);
+
+    /// <summary>Proper time on a body's own clock over a lab flight time: τ = t/γ.</summary>
+    public static double ProperTime(double labTime, double beta) => labTime / Lorentz(beta);
+
+    /// <summary>
+    /// Lab-frame distance a warhead covers before its onboard fuse (proper time
+    /// <paramref name="fuseProperTime"/>) fires. The moving fuse runs slow, so in our frame
+    /// it takes t = γ·τ to fire, by which point the warhead has flown d = βc·t = βγ·c·τ.
+    /// </summary>
+    public static double DetonationDistance(double beta, double fuseProperTime)
+        => beta * Lorentz(beta) * Constants.C * fuseProperTime;
+
+    /// <summary>
+    /// Solve the launch speed β whose time-dilated fuse detonates exactly at slant range R.
+    /// From d = βγ·c·τ = R: let k = R/(c·τ) = βγ, then β = k/√(1 + k²) (and γ = √(1 + k²)).
+    /// </summary>
+    public static double SpeedForFuseRange(double slantRange, double fuseProperTime)
+    {
+        double k = slantRange / (Constants.C * fuseProperTime);
+        return k / Math.Sqrt(1.0 + k * k);
+    }
+
+    /// <summary>
+    /// Simulate a beam shot as a straight ray at βc; reports flight time but lead is
+    /// negligible over engagement ranges. The player commits the beam SPEED β (v/c);
+    /// the delivered pulse energy N·(γ−1)·m₀c² falls out of it.
     /// </summary>
     public static BeamShot SimulateBeam(
-        BeamWeapon weapon, double targetSlantRange, double azimuth, double elevation, double pulseEnergyJoules)
+        BeamWeapon weapon, double targetSlantRange, double azimuth, double elevation, double beta)
     {
-        double beta = weapon.Beta;
+        beta = Math.Clamp(beta, 0.0, 0.999999);
         double gamma = Lorentz(beta);
         double speed = beta * Constants.C;
 
         Vec3 dir = Vec3.FromAzimuthElevation(azimuth, elevation, 1.0);
         Vec3 endpoint = dir * targetSlantRange;
-        double flightTime = targetSlantRange / speed;
+        double flightTime = speed > 0 ? targetSlantRange / speed : 0;
         double restMass = weapon.RestEnergyJoules / (Constants.C * Constants.C);
 
         return new BeamShot(
-            dir, endpoint, flightTime, gamma, beta, speed, pulseEnergyJoules,
+            dir, endpoint, flightTime, gamma, beta, speed,
+            PulseEnergy(weapon, beta),
             ParticleKineticEnergy(weapon.RestEnergyJoules, beta),
             ParticleMomentum(restMass, beta));
     }

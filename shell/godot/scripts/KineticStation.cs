@@ -95,33 +95,47 @@ public partial class KineticStation : StationView
             var windCol = new VBoxContainer();
             windCol.AddThemeConstantOverride("separation", 2);
             windCol.AddChild(Ui.Text("WIND VECTOR", P.Faint, 9));
-            windCol.AddChild(Ui.Text($"{o.WindSpeed:0.0} m/s", P.Text, 21));
-            windCol.AddChild(Ui.Text($"FROM {o.WindFrom:000}°", P.AccentDim, 11));
+            windCol.AddChild(Ui.Text($"{o.WindSpeed:0.00} m/s", P.Text, 21));
+            windCol.AddChild(Ui.Text($"FROM {o.WindFrom:000.0}°", P.AccentDim, 11));
             windRow.AddChild(windCol);
             v.AddChild(windRow);
         }
 
         var envCells = new List<(string, string)>();
         if (_mission.TierIndex >= 1) envCells.Add(("ALTITUDE", $"{_mission.Environment!.SiteAltitude:0} m"));
-        if (flags.VariableG) envCells.Add(("LOCAL g", $"{o.LocalG:0.000} m/s²"));
-        if (flags.Drag) envCells.Add(("AIR TEMP", $"{o.AirTemp:0.0} °C"));
-        if (flags.Drag) envCells.Add(("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"));
+        if (flags.VariableG) envCells.Add(("LOCAL g", $"{o.LocalG:0.0000} m/s²"));
+        if (flags.Drag) envCells.Add(("AIR TEMP", $"{o.AirTemp:0.00} °C"));
+        if (flags.Drag) envCells.Add(("AIR DENSITY ρ", $"{o.AirDensity:0.0000} kg/m³"));
         if (envCells.Count > 0)
             v.AddChild(MetricGrid(envCells.ToArray(), P.Text));
         else
             v.AddChild(Ui.Text("Vacuum · flat ground · constant g — no air, no wind.", P.Faint, 9));
 
-        // --- Target observed ---
+        // --- Your position (gun) --- given as an absolute battlespace coordinate; the
+        // gun is no longer the origin, so range/bearing/drop are all yours to work out.
+        Vec3 g = _mission.GunOrigin;
+        Vec3 tgtAbs = AbsCoord(o.Range, o.Bearing, o.Altitude);
+        Vec3 opAbs = AbsCoord(_spotRange, _spotBearing, 0);
+
+        v.AddChild(Ui.SectionHeader(P, "Your Position — Gun", P.Accent, "GRID"));
+        v.AddChild(MetricGrid(new[]
+        {
+            ("EASTING · km", $"{g.X / 1000:0.000}"),
+            ("NORTHING · km", $"{g.Y / 1000:0.000}"),
+            ("ALTITUDE · m", $"{g.Z:0.0}"),
+        }, new Color("cdbf9f"), 14));
+
+        // --- Target observed --- a coordinate, NOT a bearing & range. Work the geometry.
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SPOTTER"));
         var tgtCells = new List<(string, string)>
         {
-            ("GROUND RANGE · 0.01 km", $"{o.Range / 1000:0.00} km"),
-            ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
+            ("EASTING · km", $"{tgtAbs.X / 1000:0.000}"),
+            ("NORTHING · km", $"{tgtAbs.Y / 1000:0.000}"),
         };
-        if (_mission.TierIndex >= 1) tgtCells.Add(("TGT ALTITUDE · 1 m", $"{o.Altitude:+0;-0;0} m"));
+        if (_mission.TierIndex >= 1) tgtCells.Add(("ALTITUDE · m", $"{tgtAbs.Z:0.0}"));
         tgtCells.Add(("MOTION", "STATIC"));
         v.AddChild(MetricGrid(tgtCells.ToArray(), new Color("e9ddc6")));
-        v.AddChild(Ui.Text($"↳ OP-1 at {_spotRange / 1000:0.00} km · brg {_spotBearing:0.0}°. Range & drop are yours to solve.", P.Faint, 9));
+        v.AddChild(Ui.Text($"↳ OP-1 at grid E {opAbs.X / 1000:0.000} · N {opAbs.Y / 1000:0.000} km. Range, bearing & drop are yours to solve.", P.Faint, 9));
 
         // --- Weapon configuration --- click the munition to cycle the loaded round.
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
@@ -156,12 +170,12 @@ public partial class KineticStation : StationView
         grid.AddThemeConstantOverride("v_separation", 11);
         v.AddChild(grid);
 
-        _azField = AddNumberField(grid, "AZIMUTH (x) · ° · ±0.1°", _az.ToString("0.0"), 0.1,
-            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
-        _elField = AddNumberField(grid, "ELEVATION (y) · ° · ±0.1°", _el.ToString("0.0"), 0.1,
-            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
-        _zcField = AddNumberField(grid, "Z-CORR (cross) · ° · ±0.1°", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
-            d => { _zc = d; });
+        _azField = AddNumberField(grid, "AZIMUTH (x) · ° · ±0.01°", _az.ToString("0.00"), 0.1,
+            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); }, format: "0.00");
+        _elField = AddNumberField(grid, "ELEVATION (y) · ° · ±0.01°", _el.ToString("0.00"), 0.1,
+            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); }, format: "0.00");
+        _zcField = AddNumberField(grid, "Z-CORR (cross) · ° · ±0.01°", _zc.ToString("+0.00;-0.00;0.00"), 0.1,
+            d => { _zc = d; }, format: "+0.00;-0.00;0.00");
         _chargeField = AddNumberField(grid, "PROPELLANT CHARGE · 1–7", _charge.ToString(), 1.0,
             d => { _charge = (int)Math.Round(d); UpdatePips(); RefreshV0(); },
             isInt: true,
@@ -235,6 +249,7 @@ public partial class KineticStation : StationView
         Board.TargetBearing = _mission.KineticObserved!.Bearing;
         Board.TargetLabel = "TGT · ARMOR";
         Board.AimAzimuth = _az;
+        Board.GunOriginM = new Vector2((float)_mission.GunOrigin.X, (float)_mission.GunOrigin.Y);
         Board.HasSpotter = true;
         Board.SpotterRange = _spotRange;
         Board.SpotterBearing = _spotBearing;
@@ -257,7 +272,7 @@ public partial class KineticStation : StationView
     }
 
     private void RefreshV0()
-        => _v0Label.Text = $"{_mission.KineticWeapon!.MuzzleVelocity(_charge):0} m/s";
+        => _v0Label.Text = $"{_mission.KineticWeapon!.MuzzleVelocity(_charge):0.0} m/s";
 
     private void UpdatePips()
     {
@@ -274,7 +289,6 @@ public partial class KineticStation : StationView
         Board.FiredRange = r.Trajectory.Impact.Range;
         Board.FiredBearing = r.Trajectory.Impact.Bearing;
         Board.FiredHit = r.Score.Hit;
-        Board.BeginImpactAnim();
 
         var arc = new List<Vector2>();
         double arcMinAlt = 0;
@@ -289,7 +303,8 @@ public partial class KineticStation : StationView
         double floor = lo < 0 ? lo - Math.Abs(lo) * 0.1 - 50 : 0;
         VPlane.SetScale(Math.Max(_mission.KineticTarget!.Range, r.Trajectory.Impact.Range) * 1.1,
                         Math.Max(r.Trajectory.Apex * 1.2, 500), floor);
-        VPlane.BeginArcAnim();
+        // One sim clock drives both views over the round's REAL time of flight.
+        BeginShotAnimation(r.Trajectory.Impact.Time);
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
         StartCooldown(45.0);
@@ -307,32 +322,54 @@ public partial class KineticStation : StationView
             return;
         }
 
-        // Calibration: don't hand over the exact range/line error. Report what the
-        // spotter at OP-1 sees instead — the round's range & bearing FROM the OP and how
-        // far off the target it looked from there — and let the player triangulate.
-        var o = _mission.KineticObserved!;
+        // Calibration: don't hand over the exact gun-frame range/line error. Report what
+        // the spotter at OP-1 actually SEES — the round's range & bearing from the OP, and
+        // where it fell relative to the target (line + depth) — and let the player
+        // triangulate. The spotter watches REALITY, so it references the TRUE target, not
+        // the noisy intel coordinate: that's what lets it walk you off the triangulation
+        // error. (Referencing the observed target made a shot laid on the given coordinate
+        // read as "0.0° on" yet still miss — the loop could never correct itself.)
+        var trueT = _mission.KineticTarget!;
         Vector2 spot = Polar(_spotRange, _spotBearing);
         Vector2 impact = Polar(r.Trajectory.Impact.Range, r.Trajectory.Impact.Bearing);
-        Vector2 tgt = Polar(o.Range, o.Bearing);
+        Vector2 tgt = new((float)trueT.Position.X, (float)trueT.Position.Y);
         Vector2 sToImpact = impact - spot;
         Vector2 sToTgt = tgt - spot;
 
         double opRange = sToImpact.Length();
         double opBrg = Bearing(sToImpact);
         double angOff = AngleBetween(sToTgt, sToImpact);
-        // Sign: which side of the OP→target line the round fell (spotter's view).
         double cross = sToTgt.X * sToImpact.Y - sToTgt.Y * sToImpact.X;
-        string side = cross > 0 ? "RIGHT of tgt" : cross < 0 ? "LEFT of tgt" : "on tgt line";
+
+        // Resolve the spotter's view into a tangible LINE (cross-range past the target) and
+        // DEPTH (near/far along OP-1's sightline) bracket, thresholded by the splash radius
+        // so a near-miss on one axis can't masquerade as a hit. A pure depth miss now reads
+        // "ON LINE · BEYOND tgt" instead of a deceptive "0.0°".
+        double splash = _mission.Splash;
+        double lateral = opRange * Math.Sin(Constants.DegToRad(angOff));
+        string lineWord = lateral < splash ? "ON LINE"
+            : (cross > 0 ? $"{lateral:0.0} m RIGHT" : $"{lateral:0.0} m LEFT");
+        double depth = opRange - sToTgt.Length();
+        string depthWord = Math.Abs(depth) < splash ? "ON RANGE"
+            : depth > 0 ? "BEYOND tgt" : "NEAR side";
 
         SetLastShot("△ CALIBRATION SHOT", acc,
             new[]
             {
                 ("SHOT NO.", ShotNo.ToString("00"), P.Text),
-                ("OP-1 → IMPACT", $"{opRange / 1000:0.00} km", P.Text),
-                ("OP-1 BEARING", $"{opBrg:0.0}°", P.Text),
-                ("OFF TARGET", $"{angOff:0.0}° {side}", acc),
+                ("OP-1 → IMPACT", $"{opRange / 1000:0.000} km", P.Text),
+                ("OP-1 BEARING", $"{opBrg:0.00}°", P.Text),
+                ("FALL OF SHOT", $"{lineWord} · {depthWord}", acc),
             },
-            "spotter report — triangulate the correction from OP-1.");
+            "OP-1 watches the real target — correct line & depth from its grid position.");
+    }
+
+    /// <summary>Gun-relative polar + height → absolute battlespace coordinate (ENU metres).</summary>
+    private Vec3 AbsCoord(double range, double bearingDeg, double altAboveGun)
+    {
+        double br = Constants.DegToRad(bearingDeg);
+        var g = _mission.GunOrigin;
+        return new Vec3(g.X + range * Math.Sin(br), g.Y + range * Math.Cos(br), g.Z + altAboveGun);
     }
 
     /// <summary>Gun-relative polar (range m, compass bearing deg) → ENU east/north metres.</summary>
@@ -364,8 +401,8 @@ public partial class KineticStation : StationView
             SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
                 new[]
                 {
-                    ("AZIMUTH", $"{s.Azimuth:0.0}°", P.Text),
-                    ("ELEVATION", $"{s.Elevation:0.0}°", P.Text),
+                    ("AZIMUTH", $"{s.Azimuth:0.00}°", P.Text),
+                    ("ELEVATION", $"{s.Elevation:0.00}°", P.Text),
                     ("CHARGE", s.Charge.ToString(), P.Text),
                 },
                 "one valid firing solution shown.");

@@ -18,9 +18,12 @@ public static class Munitions
     public static KineticWeapon KineticArtillery(Munition? munition = null)
         => new("KINETIC ARTILLERY", munition ?? M72HeFrag);
 
+    /// <summary>Protons per pulse — sized so a pulse near β≈0.94 delivers a few GJ.</summary>
+    public const double ProtonsPerPulse = 1.0e19;
+
     public static BeamWeapon ProtonFocused() => new(
         Name: "RELATIVISTIC BEAM",
         ProfileName: "PROTON · FOCUSED",
         RestEnergyJoules: Constants.ProtonRestJoules,
-        Beta: 0.94);
+        ParticleCount: ProtonsPerPulse);
 }

@@ -43,8 +43,9 @@ will go. The only two pre-fire indicators are deliberately **short, fixed-length
 stubs out of the gun** that just echo your inputs: a `BRG` heading tick (azimuth) on
 the plotting board and a `LAY` barrel stub (elevation) on the vertical view. Both are
 far too short to reach the target, so they can't show alignment or whether a shot
-would land — you lay the gun by reading the numeric bearing against the target's
-measured bearing. A trajectory is drawn *only after* you commit, and it is the real
+would land — you lay the gun by working the bearing, range and drop out of the
+target's **grid coordinate** (the gun is not the origin; the board reads in absolute
+battlespace coordinates). A trajectory is drawn *only after* you commit, and it is the real
 one the oracle integrated. The calculator is arithmetic-only and holds no physics, so
 it cannot predict either.
 
@@ -57,6 +58,10 @@ Mission m = GameEngine.GenerateMission(
 // player derives a solution by hand, then commits:
 KineticResult r = GameEngine.FireKinetic(m, azimuth: 41.7, elevation: 38.0, charge: 5);
 // r.Trajectory.Impact, r.Score.Miss / RangeError / LineError / Hit
+
+// the beam commits a pointing + a launch SPEED β (v/c); the dilated fuse detonates at βγcτ:
+BeamResult b = GameEngine.FireBeam(m, azimuth: 41.7, elevation: 12.0, beta: 0.937);
+// b.Score.DetonationDistance, b.Score.RangeError (d − R) / OnAxis / Hit
 ```
 
 ## Physics scope (design §7)
@@ -72,9 +77,15 @@ At **Medium II** the air density is held at the gun-site value, so drag is stead
 the crosswind deflection is solvable per-axis. **Hard** lets density vary along the arc
 (`ρ(h)`), coupling drag to altitude and gravity — the genuinely non-analytic regime.
 
-The relativistic beam is energy/γ-led (lead ≈ 0 at near-c), scored on two
-independent gates: pointing accuracy **and** delivered pulse energy ≥ kill
-threshold via (γ−1)m₀c².
+The relativistic beam is a **long-range (light-second) proper-time warhead intercept**
+(lead ≈ 0 at near-c), scored on two independent gates: pointing accuracy **and**
+detonation range. You don't set an energy — the warhead's fuse fires after `τ` seconds
+on its **own** clock, and time dilation stretches that to `γ·τ` for us, so it detonates
+at `d = β·γ·c·τ`. You dial the launch **speed β** (as a % of c) so the dilated fuse lands
+the blast on the target: `k = R/(c·τ)` (= R in light-seconds ÷ τ), `β = k/√(1 + k²)`.
+Too slow detonates short, too fast overshoots, so "just max it out" doesn't win. Because
+the flight is now seconds-to-minutes, the fly-out animation runs over the **real
+(time-scaled) flight time**, with a `1×–15×` playback fast-forward.
 
 ## Build & test
 

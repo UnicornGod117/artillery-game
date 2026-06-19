@@ -13,14 +13,16 @@ public sealed record KineticScore(
     bool Hit
 );
 
-/// <summary>How a beam shot landed: two independent gates (pointing AND energy).</summary>
+/// <summary>How a beam shot landed: two independent gates (pointing AND detonation range).</summary>
 public sealed record BeamScore(
     double AzError,
     double ElError,
-    double AngError,     // deg
-    double LateralMiss,  // m at target range
+    double AngError,          // deg
+    double LateralMiss,       // m at target range
+    double DetonationDistance,// d = βγ·c·τ, m (where the dilated fuse fired)
+    double RangeError,        // d − R, m  (+beyond / −short of the target)
     bool OnAxis,
-    bool EnergyOk,
+    bool DetonationOk,
     bool Hit
 );
 
@@ -45,7 +47,7 @@ public static class Scoring
     public static BeamScore ScoreBeam(
         BeamShot beam, double aimAzimuth, double aimElevation,
         double targetBearing, double targetLosElevation, double targetSlantRange,
-        double killEnergyJoules, double angularToleranceDeg)
+        double fuseProperTime, double detonationToleranceMeters, double angularToleranceDeg)
     {
         double azErr = aimAzimuth - targetBearing;
         azErr = ((azErr + 540) % 360) - 180; // wrap to [-180,180]
@@ -54,7 +56,12 @@ public static class Scoring
         double lateralMiss = Math.Abs(targetSlantRange * Math.Sin(Constants.DegToRad(angErr)));
 
         bool onAxis = angErr <= angularToleranceDeg;
-        bool energyOk = beam.PulseEnergyJoules >= killEnergyJoules;
-        return new BeamScore(azErr, elErr, angErr, lateralMiss, onAxis, energyOk, onAxis && energyOk);
+        // Detonation range is a WINDOW, not a floor: the dilated fuse fires at one fixed
+        // distance d = βγ·c·τ. Too slow → short, too fast (β maxed) → overshoots — so the
+        // player must solve the β whose dilation lands the blast on the target.
+        double d = Relativistic.DetonationDistance(beam.Beta, fuseProperTime);
+        double rangeError = d - targetSlantRange;
+        bool detOk = Math.Abs(rangeError) <= detonationToleranceMeters;
+        return new BeamScore(azErr, elErr, angErr, lateralMiss, d, rangeError, onAxis, detOk, onAxis && detOk);
     }
 }
