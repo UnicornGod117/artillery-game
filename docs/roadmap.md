@@ -140,6 +140,32 @@ real elapsed time multiplied by a single global *sim-seconds-per-real-second* sc
   target kinematics are pure functions of `t`. The flight-time-driven flyout required by
   the timed-intercept section is just the first instance of this rule.
 
+### ⏩ Flight-time fast-forward (playback acceleration)
+
+*A direct corollary of the one-clock rule above — and only safe **because** of it. With
+real flight times that can run to minutes at orbital range, the player must be able to skip
+the wait without ever distorting the physics.*
+
+- **Presets `1× · 1.5× · 2× · 4× · 10× · 15×`** (15× only if the longest engagements need
+  it). A simple speed control on the shot.
+- **It multiplies the single global sim clock's rate (sim-seconds per real-second) and
+  nothing else.** Because *every* time-dependent quantity already derives from that one
+  clock, speeding the clock speeds the **whole world uniformly** — projectile/pulse travel,
+  the warhead's proper-time fuse, dilation `γ`, and target motion all scale **together**.
+  Every relative duration, lead and intercept relationship is preserved exactly; nothing is
+  sped up more, less, or differently than anything else.
+- **It is purely a playback speed — never a physics change.** The oracle still computes the
+  true outcome (impact point, detonation distance, hit/miss, energies) from the physics,
+  deterministically and independent of wall-clock; fast-forward only changes how fast that
+  already-decided result is *replayed*. The same shot at 1× and at 15× lands identically.
+- **Scope: only the shot's flyout / detonation window.** Acceleration engages the instant a
+  shot is committed and the animation begins, and snaps back to `1×` the instant it ends.
+  Input, idle, the UI, and the reload cooldown run at normal real time — the reload bar is
+  paced for the *player*, not the physics, so it stays `1×` and is not part of this.
+- Implementation shape: the sim clock exposes a `rate` the renderer reads; the presets just
+  set `rate` for the duration of the flyout. No system is allowed to read wall-clock
+  directly, so none can fall out of step when the rate changes.
+
 ---
 
 ## Deferred (from design §12 and this build)
