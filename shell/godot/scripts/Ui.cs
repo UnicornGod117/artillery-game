@@ -129,13 +129,44 @@ public static class Ui
         normal.ContentMarginTop = 13; normal.ContentMarginBottom = 13;
         var hover = (StyleBoxFlat)normal.Duplicate();
         hover.BgColor = p.Accent.Lightened(0.12f);
+        var disabled = (StyleBoxFlat)normal.Duplicate();
+        disabled.BgColor = p.Accent.Darkened(0.55f);
         b.AddThemeStyleboxOverride("normal", normal);
         b.AddThemeStyleboxOverride("hover", hover);
         b.AddThemeStyleboxOverride("pressed", normal);
+        b.AddThemeStyleboxOverride("disabled", disabled);
         b.AddThemeColorOverride("font_color", p.Bg);
         b.AddThemeColorOverride("font_hover_color", p.Bg);
+        b.AddThemeColorOverride("font_disabled_color", new Color(p.Bg.R, p.Bg.G, p.Bg.B, 0.7f));
         b.AddThemeFontSizeOverride("font_size", 16);
         return b;
+    }
+
+    /// <summary>
+    /// Make <paramref name="panel"/> draggable by grabbing <paramref name="handle"/>
+    /// (its title bar). Used so pop-up windows can be moved out of the way.
+    /// </summary>
+    public static void MakeDraggable(Control handle, Control panel)
+    {
+        bool dragging = false;
+        Vector2 grabOffset = Vector2.Zero;
+        handle.MouseFilter = Control.MouseFilterEnum.Stop;
+        handle.GuiInput += e =>
+        {
+            if (e is InputEventMouseButton { ButtonIndex: MouseButton.Left } mb)
+            {
+                dragging = mb.Pressed;
+                if (mb.Pressed) grabOffset = panel.GetGlobalMousePosition() - panel.GlobalPosition;
+            }
+            else if (e is InputEventMouseMotion && dragging)
+            {
+                Vector2 target = panel.GetGlobalMousePosition() - grabOffset;
+                Vector2 max = panel.GetViewportRect().Size - panel.Size;
+                panel.GlobalPosition = new Vector2(
+                    Mathf.Clamp(target.X, 0, Mathf.Max(0, max.X)),
+                    Mathf.Clamp(target.Y, 0, Mathf.Max(0, max.Y)));
+            }
+        };
     }
 
     /// <summary>A numeric input field with up/down steppers.</summary>

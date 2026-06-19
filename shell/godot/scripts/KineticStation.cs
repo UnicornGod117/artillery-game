@@ -14,10 +14,17 @@ namespace FiringSolution.Shell;
 /// </summary>
 public partial class KineticStation : StationView
 {
-    private static int _seedSeq = 4471;   // advances each new mission
+    private static int _seedSeq = 4471;   // source of fresh seeds (NEW MISSION advances it)
+    private static int _seed = -1;        // current mission seed (kept across tier/weapon changes)
+    private static int _tier = 1;         // difficulty tier (selectable in the top bar)
+    private static int _munIdx = 0;       // selected munition (index into Munitions.All)
+
     private Mission _mission = null!;
     private double _az, _el = 45, _zc = 0;
     private int _charge = 5;
+
+    // Spotter / observation post (gun-relative polar), used for calibration feedback.
+    private double _spotRange, _spotBearing;
 
     private LineEdit _azField = null!, _elField = null!, _zcField = null!, _chargeField = null!;
     private Label _v0Label = null!;
@@ -25,12 +32,25 @@ public partial class KineticStation : StationView
 
     protected override Palette BuildPalette() => Palette.Amber;
 
+    protected override void OnNewMission() => _seed = _seedSeq++;
+
     protected override Control BuildTopBar()
     {
+        if (_seed < 0) _seed = _seedSeq++;
+
         // Mission is needed for chip text — generate it up front.
         _mission = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Kinetic, MathFidelity: 1, Triangulation: 0.3, Circumstance: 0.3, Seed: _seedSeq++));
-        _az = Math.Round(_mission.KineticObserved!.Bearing);
+            WeaponKind.Kinetic, MathFidelity: _tier, Triangulation: 0.3, Circumstance: 0.3, Seed: _seed));
+
+        // Apply the chosen munition (the generator bakes in the default; swapping the
+        // weapon only changes the round's ballistics, never the hidden target).
+        var mun = Munitions.All[_munIdx];
+        _mission = _mission with { KineticWeapon = new KineticWeapon("KINETIC ARTILLERY", mun), Splash = mun.Splash };
+
+        // Do NOT pre-aim at the target — the player reads the bearing and lays the gun
+        // themselves (that's half the game). Start pointing due north.
+        _az = 0;
+        ComputeSpotter();
 
         return MakeTopBar(
             "FCS-01 · STATION ALPHA · Kinetic artillery",
@@ -38,10 +58,20 @@ public partial class KineticStation : StationView
             {
                 ("WPN · KINETIC ARTILLERY", true),
                 ("WORLD · " + _mission.World.Name, false),
-                ("TIER · " + _mission.TierLabel, false),
                 (_mission.Id, false),
             },
-            "RELOAD CYCLE");
+            "RELOAD CYCLE",
+            _tier, 0, t => { _tier = t; (GetParent() as Main)?.ReloadStation(); });
+    }
+
+    /// <summary>Place a spotter off to one side of the target, deterministically from the seed.</summary>
+    private void ComputeSpotter()
+    {
+        var o = _mission.KineticObserved!;
+        int side = (_mission.Seed & 1) == 0 ? +1 : -1;
+        double off = 35 + _mission.Seed % 35;                 // 35°..69° off the target line
+        _spotBearing = ((o.Bearing + side * off) % 360 + 360) % 360;
+        _spotRange = o.Range * (0.5 + (_mission.Seed >> 3) % 30 / 100.0); // 0.50..0.79 of target range
     }
 
     protected override Control BuildLeftPanel()
@@ -52,49 +82,54 @@ public partial class KineticStation : StationView
         panel.AddChild(v);
 
         var o = _mission.KineticObserved!;
+        var flags = _mission.Flags;
 
-        // --- Environment ---
+        // --- Environment --- only show what this tier's physics actually use, so the
+        // panel never hands the player irrelevant data (e.g. air density before drag).
         v.AddChild(Ui.SectionHeader(P, "Environment", P.Accent, "MEASURED"));
-        var windRow = new HBoxContainer();
-        windRow.AddThemeConstantOverride("separation", 14);
-        var compass = new Compass { P = P, FromDeg = o.WindFrom };
-        windRow.AddChild(compass);
-        var windCol = new VBoxContainer();
-        windCol.AddThemeConstantOverride("separation", 2);
-        windCol.AddChild(Ui.Text("WIND VECTOR", P.Faint, 9));
-        windCol.AddChild(Ui.Text($"{o.WindSpeed:0.0} m/s", P.Text, 21));
-        windCol.AddChild(Ui.Text($"FROM {o.WindFrom:000}°", P.AccentDim, 11));
-        windRow.AddChild(windCol);
-        v.AddChild(windRow);
-        v.AddChild(MetricGrid(new[]
+        if (flags.Wind)
         {
-            ("ALTITUDE", $"{_mission.Environment!.SiteAltitude:0} m"),
-            ("AIR TEMP", $"{o.AirTemp:0.0} °C"),
-            ("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"),
-            ("LOCAL g", $"{o.LocalG:0.000} m/s²"),
-        }, P.Text));
+            var windRow = new HBoxContainer();
+            windRow.AddThemeConstantOverride("separation", 14);
+            windRow.AddChild(new Compass { P = P, FromDeg = o.WindFrom });
+            var windCol = new VBoxContainer();
+            windCol.AddThemeConstantOverride("separation", 2);
+            windCol.AddChild(Ui.Text("WIND VECTOR", P.Faint, 9));
+            windCol.AddChild(Ui.Text($"{o.WindSpeed:0.0} m/s", P.Text, 21));
+            windCol.AddChild(Ui.Text($"FROM {o.WindFrom:000}°", P.AccentDim, 11));
+            windRow.AddChild(windCol);
+            v.AddChild(windRow);
+        }
+
+        var envCells = new List<(string, string)>();
+        if (_mission.TierIndex >= 1) envCells.Add(("ALTITUDE", $"{_mission.Environment!.SiteAltitude:0} m"));
+        if (flags.VariableG) envCells.Add(("LOCAL g", $"{o.LocalG:0.000} m/s²"));
+        if (flags.Drag) envCells.Add(("AIR TEMP", $"{o.AirTemp:0.0} °C"));
+        if (flags.Drag) envCells.Add(("AIR DENSITY ρ", $"{o.AirDensity:0.000} kg/m³"));
+        if (envCells.Count > 0)
+            v.AddChild(MetricGrid(envCells.ToArray(), P.Text));
+        else
+            v.AddChild(Ui.Text("Vacuum · flat ground · constant g — no air, no wind.", P.Faint, 9));
 
         // --- Target observed ---
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SPOTTER"));
-        v.AddChild(MetricGrid(new[]
+        var tgtCells = new List<(string, string)>
         {
             ("GROUND RANGE · 0.01 km", $"{o.Range / 1000:0.00} km"),
             ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
-            ("TGT ALTITUDE · 1 m", $"{o.Altitude:+0;-0;0} m"),
-            ("MOTION", "STATIC"),
-        }, new Color("e9ddc6")));
-        v.AddChild(Ui.Text("↳ Localised from OP-1 / OP-2. Range & drop are yours to solve.", P.Faint, 9));
+        };
+        if (_mission.TierIndex >= 1) tgtCells.Add(("TGT ALTITUDE · 1 m", $"{o.Altitude:+0;-0;0} m"));
+        tgtCells.Add(("MOTION", "STATIC"));
+        v.AddChild(MetricGrid(tgtCells.ToArray(), new Color("e9ddc6")));
+        v.AddChild(Ui.Text($"↳ OP-1 at {_spotRange / 1000:0.00} km · brg {_spotBearing:0.0}°. Range & drop are yours to solve.", P.Faint, 9));
 
-        // --- Weapon configuration ---
+        // --- Weapon configuration --- click the munition to cycle the loaded round.
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
-        var munBox = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
-        var munRow = new HBoxContainer();
-        munRow.AddChild(Ui.Text(_mission.KineticWeapon!.Munition.Name, P.Text, 12));
-        munRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        munRow.AddChild(Ui.Text("▾", P.Faint, 9));
-        munBox.AddChild(munRow);
-        v.AddChild(munBox);
         var m = _mission.KineticWeapon!.Munition;
+        var munBtn = Ui.FlatButton(P, m.Name + "   ▾  (tap to change)", P.Text, P.Border, 12);
+        munBtn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        munBtn.Pressed += () => { _munIdx = (_munIdx + 1) % Munitions.All.Count; (GetParent() as Main)?.ReloadStation(); };
+        v.AddChild(munBtn);
         v.AddChild(MetricGrid(new[]
         {
             ("SHELL MASS", $"{m.Mass:0.0} kg"),
@@ -152,6 +187,7 @@ public partial class KineticStation : StationView
 
         var fire = Ui.PrimaryButton(P, "◆  COMMIT & FIRE");
         fire.Pressed += Fire;
+        FireButton = fire;
         v.AddChild(fire);
 
         // Calculator (arithmetic only — opens a pop-up keypad, design §4).
@@ -186,12 +222,23 @@ public partial class KineticStation : StationView
     protected override void Configure()
     {
         Board.P = P; Board.IsBeam = false;
-        Board.PxPerMeter = 0.038f;
-        Board.RingStepM = 2000; Board.RingCount = 4;
-        Board.TargetRange = _mission.KineticObserved!.Range;
+
+        // Scale the rings to the engagement (now up to ~40 km), keeping the board's
+        // plotted radius roughly constant so distant targets still fit on screen.
+        double tr = _mission.KineticObserved!.Range;
+        double ringStep = tr > 24000 ? 10000 : tr > 12000 ? 5000 : 2000;
+        int ringCount = (int)Math.Clamp(Math.Ceiling(tr * 1.15 / ringStep) + 1, 4, 8);
+        double coverage = ringStep * ringCount;
+        Board.RingStepM = ringStep; Board.RingCount = ringCount;
+        Board.PxPerMeter = (float)(300.0 / coverage);
+        Board.TargetRange = tr;
         Board.TargetBearing = _mission.KineticObserved!.Bearing;
         Board.TargetLabel = "TGT · ARMOR";
         Board.AimAzimuth = _az;
+        Board.HasSpotter = true;
+        Board.SpotterRange = _spotRange;
+        Board.SpotterBearing = _spotBearing;
+        Board.SpotterLabel = "OP-1";
 
         VPlane.P = P; VPlane.IsBeam = false;
         VPlane.AimElevation = _el;
@@ -227,7 +274,7 @@ public partial class KineticStation : StationView
         Board.FiredRange = r.Trajectory.Impact.Range;
         Board.FiredBearing = r.Trajectory.Impact.Bearing;
         Board.FiredHit = r.Score.Hit;
-        Board.QueueRedraw();
+        Board.BeginImpactAnim();
 
         var arc = new List<Vector2>();
         double arcMinAlt = 0;
@@ -242,23 +289,71 @@ public partial class KineticStation : StationView
         double floor = lo < 0 ? lo - Math.Abs(lo) * 0.1 - 50 : 0;
         VPlane.SetScale(Math.Max(_mission.KineticTarget!.Range, r.Trajectory.Impact.Range) * 1.1,
                         Math.Max(r.Trajectory.Apex * 1.2, 500), floor);
-        VPlane.QueueRedraw();
+        VPlane.BeginArcAnim();
 
-        string rng = $"{Math.Abs(r.Score.RangeError):0} m {(r.Score.RangeError > 1 ? "LONG" : r.Score.RangeError < -1 ? "SHORT" : "ON RANGE")}";
-        string line = $"{Math.Abs(r.Score.LineError):0} m {(r.Score.LineError > 1 ? "LEFT" : r.Score.LineError < -1 ? "RIGHT" : "ON LINE")}";
         Color acc = r.Score.Hit ? P.Accent : P.Red;
-        if (r.Score.Hit) AwardCareer(850);
+        StartCooldown(3.5);
 
-        SetLastShot(
-            r.Score.Hit ? "◆ TARGET DESTROYED" : "△ CALIBRATION SHOT", acc,
+        if (r.Score.Hit)
+        {
+            AwardCareer(850);
+            SetLastShot("◆ TARGET DESTROYED", acc,
+                new[]
+                {
+                    ("SHOT NO.", ShotNo.ToString("00"), P.Text),
+                    ("RESULT", "DIRECT HIT", acc),
+                },
+                "within splash tolerance.");
+            return;
+        }
+
+        // Calibration: don't hand over the exact range/line error. Report what the
+        // spotter at OP-1 sees instead — the round's range & bearing FROM the OP and how
+        // far off the target it looked from there — and let the player triangulate.
+        var o = _mission.KineticObserved!;
+        Vector2 spot = Polar(_spotRange, _spotBearing);
+        Vector2 impact = Polar(r.Trajectory.Impact.Range, r.Trajectory.Impact.Bearing);
+        Vector2 tgt = Polar(o.Range, o.Bearing);
+        Vector2 sToImpact = impact - spot;
+        Vector2 sToTgt = tgt - spot;
+
+        double opRange = sToImpact.Length();
+        double opBrg = Bearing(sToImpact);
+        double angOff = AngleBetween(sToTgt, sToImpact);
+        // Sign: which side of the OP→target line the round fell (spotter's view).
+        double cross = sToTgt.X * sToImpact.Y - sToTgt.Y * sToImpact.X;
+        string side = cross > 0 ? "RIGHT of tgt" : cross < 0 ? "LEFT of tgt" : "on tgt line";
+
+        SetLastShot("△ CALIBRATION SHOT", acc,
             new[]
             {
                 ("SHOT NO.", ShotNo.ToString("00"), P.Text),
-                ("MISS DIST.", $"{Math.Round(r.Score.Miss)} m", acc),
-                ("RANGE", rng, P.Text),
-                ("LINE", line, P.Text),
+                ("OP-1 → IMPACT", $"{opRange / 1000:0.00} km", P.Text),
+                ("OP-1 BEARING", $"{opBrg:0.0}°", P.Text),
+                ("OFF TARGET", $"{angOff:0.0}° {side}", acc),
             },
-            r.Score.Hit ? "within splash tolerance." : "apply correction & re-fire.");
+            "spotter report — triangulate the correction from OP-1.");
+    }
+
+    /// <summary>Gun-relative polar (range m, compass bearing deg) → ENU east/north metres.</summary>
+    private static Vector2 Polar(double range, double bearingDeg)
+    {
+        double br = Constants.DegToRad(bearingDeg);
+        return new Vector2((float)(range * Math.Sin(br)), (float)(range * Math.Cos(br)));
+    }
+
+    private static double Bearing(Vector2 v)
+    {
+        double b = Mathf.RadToDeg(Mathf.Atan2(v.X, v.Y));
+        return b < 0 ? b + 360 : b;
+    }
+
+    private static double AngleBetween(Vector2 a, Vector2 b)
+    {
+        double la = a.Length(), lb = b.Length();
+        if (la < 1e-3 || lb < 1e-3) return 0;
+        double cos = Math.Clamp((double)a.Dot(b) / (la * lb), -1.0, 1.0);
+        return Math.Acos(cos) * 180.0 / Math.PI;
     }
 
     private void RevealSolution()

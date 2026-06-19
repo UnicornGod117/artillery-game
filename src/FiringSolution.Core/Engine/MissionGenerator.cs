@@ -39,7 +39,11 @@ public static class MissionGenerator
         var weapon = Munitions.KineticArtillery();
         double siteAltitude = tierIdx >= 1 ? Math.Round(rng.Lerp(0, 1600)) : 0;
 
-        double range = Math.Round(rng.Lerp(4000, 11000));
+        // Drag-free tiers (Easy / Medium I) can reach right out to ~40 km, so let the
+        // target sit anywhere in that radius. At the drag tiers (Medium II / Hard) the
+        // round is drag-limited, so the reachable envelope stays nearer the gun.
+        double maxRange = tierIdx >= 2 ? 11000 : 40000;
+        double range = Math.Round(rng.Lerp(4000, maxRange));
         double bearing = Math.Round(rng.Lerp(0, 360) * 10) / 10;
         double tAlt = tierIdx >= 1 ? Math.Round(rng.Lerp(-120, 260)) : 0;
 
