@@ -20,6 +20,12 @@ if (-not (Test-Path $godot)) {
 
 $project = Join-Path $PSScriptRoot 'shell\godot'
 
+if (-not $Edit) {
+    Write-Host "Building C# project..."
+    dotnet build (Join-Path $project 'FiringSolution.Shell.csproj') -c Debug --nologo -v quiet
+    if ($LASTEXITCODE -ne 0) { Write-Error "Build failed."; exit 1 }
+}
+
 $godotArgs = @('--path', $project)
 if ($Edit) { $godotArgs += '--editor' }
 
