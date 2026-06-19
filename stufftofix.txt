@@ -48,3 +48,22 @@ STUFF TO FIX — status
 [DONE] +  cannon range too small
         → kinetic targets can now sit out to ~40 km (drag-free tiers); the
           plotting board auto-scales its rings/zoom to the engagement.
+
+[DONE] 10. beam auto-filled the correct bearing on a new mission
+        → the emitter now starts at azimuth/elevation 0 (like the kinetic gun).
+          Pointing is read off the target coordinate, not handed to you.
+
+[DONE] 11. zoom limits too tight
+        → plotting-board zoom now spans 0.35×–24× (was 0.6×–3×) and zooms
+          toward the cursor, so you can pull right in to plot by hand.
+
+[DONE] 12. beam: choose particle SPEED, not energy (no "anything more than")
+        → you now dial β (% of c); the pulse delivers N·(γ−1)m₀c². The kill is an
+          energy WINDOW (required ± tolerance), so you must SOLVE the speed for the
+          required energy — too fast over-penetrates and misses. Maxing β loses.
+
+[DONE] 13. gun-as-origin gave away exact bearing & range
+        → there's now a gridded battlespace with absolute 3D coordinates. The gun
+          and target are placed at coordinates; the target is given as a COORDINATE,
+          and bearing / range / elevation are yours to work out. The board, grid
+          labels and cursor readout all read in absolute coordinates.

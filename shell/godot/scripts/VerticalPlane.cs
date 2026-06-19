@@ -17,6 +17,11 @@ public partial class VerticalPlane : Control
     public Palette P = Palette.Amber;
     public bool IsBeam = false;
 
+    // Display units for range/altitude labels (km for kinetic, light-seconds for the
+    // long-range beam). Metres-per-unit + a label.
+    public double UnitMeters = 1000.0;
+    public string UnitLabel = "km";
+
     public double AimElevation = 38.0;
     public double TargetRange = 8600, TargetAltitude = 40;
 
@@ -30,14 +35,15 @@ public partial class VerticalPlane : Control
 
     private float _maxRange = 12000, _maxAlt = 4000, _minAlt = 0;
 
-    /// <summary>Start drawing the committed arc progressively from the muzzle.</summary>
-    public void BeginArcAnim() { _reveal = 0f; _animating = true; SetProcess(true); QueueRedraw(); }
+    /// <summary>Arm the committed-arc reveal; the station's single sim clock drives it.</summary>
+    public void BeginArcAnim() { _reveal = 0f; _animating = true; QueueRedraw(); }
 
-    public override void _Process(double delta)
+    /// <summary>Set reveal progress (0..1). Driven each frame by the station's one clock so
+    /// the arc draws in over the round's real (time-scaled) flight time.</summary>
+    public void SetAnimProgress(float p)
     {
-        if (!_animating) { SetProcess(false); return; }
-        _reveal += (float)delta / 0.55f;
-        if (_reveal >= 1f) { _reveal = 1f; _animating = false; }
+        _reveal = Mathf.Clamp(p, 0f, 1f);
+        _animating = _reveal < 1f;
         QueueRedraw();
     }
 
@@ -78,13 +84,13 @@ public partial class VerticalPlane : Control
             float x = left + plotW * (i / 4f);
             DrawLine(new Vector2(x, top + 6), new Vector2(x, bottom), P.BorderSoft, 1);
             DrawString(font, new Vector2(x - 8, bottom + 12),
-                $"{_maxRange * (i / 4f) / 1000:0}", HorizontalAlignment.Left, -1, 8, P.Faint);
+                $"{_maxRange * (i / 4f) / UnitMeters:0.###}", HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
         // Altitude ticks: gun level (0), the top, and the floor if it is below the gun.
-        DrawString(font, new Vector2(6, top + 4), $"+{_maxAlt / 1000:0.0}km", HorizontalAlignment.Left, -1, 8, P.Faint);
+        DrawString(font, new Vector2(6, top + 4), $"+{_maxAlt / UnitMeters:0.###}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
         if (_minAlt < 0)
-            DrawString(font, new Vector2(6, bottom - 12), $"{_minAlt:0} m", HorizontalAlignment.Left, -1, 8, P.Faint);
+            DrawString(font, new Vector2(6, bottom - 12), $"{_minAlt / UnitMeters:0.###}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Gun-level (horizon) reference line at 0 m — what the target altitude is measured against.
         DrawDashed(new Vector2(left, gunY), new Vector2(left + plotW, gunY), P.BorderSoft, 1f, 6, 5);
@@ -107,9 +113,10 @@ public partial class VerticalPlane : Control
         DrawRect(new Rect2(tgt - new Vector2(5, 5), new Vector2(10, 10)), P.Red, false, 1.5f);
         // A faint drop/lift line from gun level makes the altitude difference legible.
         DrawDashed(new Vector2(tgt.X, gunY), tgt, P.Red, 1f, 3, 3);
-        string altTag = TargetAltitude >= 0 ? $"+{TargetAltitude:0} m" : $"{TargetAltitude:0} m";
-        DrawString(font, tgt + new Vector2(-34, tgt.Y <= gunY ? -10 : 22),
-            $"TGT {TargetRange / 1000:0.0}km · {altTag}", HorizontalAlignment.Left, -1, 8, P.Red);
+        // Situational picture only — the exact range/drop are the player's to measure, so
+        // the marker is unlabelled with numbers (those come from the coordinates).
+        DrawString(font, tgt + new Vector2(-10, tgt.Y <= gunY ? -10 : 22),
+            "TGT", HorizontalAlignment.Left, -1, 8, P.Red);
 
         // Fired arc / ray — the ONLY trajectory ever drawn, and only after firing.
         // `Arc` is populated solely from the committed shot's real simulated points

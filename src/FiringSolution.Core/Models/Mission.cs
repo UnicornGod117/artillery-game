@@ -21,12 +21,21 @@ public sealed record KineticObserved(
     double WindSpeed, double WindFrom,
     double AirTemp, double AirDensity, double LocalG);
 
+/// <summary>
+/// True beam target — a long-range proper-time WARHEAD intercept. The warhead carries a
+/// fixed fuse that fires after <see cref="FuseProperTime"/> seconds on its OWN clock; time
+/// dilation stretches that to γ·τ in our frame, so it detonates at d = βγ·c·τ. The player
+/// picks the launch SPEED β so the dilated fuse detonates within
+/// <see cref="DetonationToleranceMeters"/> of the target's slant range — too slow detonates
+/// short, too fast (e.g. β maxed) overshoots, so there is exactly one band of β that works.
+/// </summary>
 public sealed record BeamTarget(
-    double SlantRange, double Bearing, double LosElevation, double KillEnergyJoules);
+    double SlantRange, double Bearing, double LosElevation,
+    double FuseProperTime, double DetonationToleranceMeters);
 
 public sealed record BeamObserved(
     double SlantRange, double Bearing, double LosElevation,
-    double Closing, double AirTemp, double AirDensity, double LocalG, double KillEnergyGJ);
+    double Closing, double FuseSeconds, double DetonationToleranceMeters);
 
 /// <summary>A fully-specified mission produced by the generator.</summary>
 public sealed record Mission(
@@ -49,5 +58,10 @@ public sealed record Mission(
     BeamWeapon? BeamWeapon = null,
     BeamTarget? BeamTarget = null,
     BeamObserved? BeamObserved = null,
-    double AngularTolerance = 0.18
+    double AngularTolerance = 0.18,
+    // Absolute position of the gun/emitter in the battlespace grid (ENU metres). The
+    // target is given to the player as an absolute COORDINATE (gun + relative); range,
+    // bearing and elevation are theirs to work out. Defaults to the origin so a mission
+    // built without a battlespace (older tests) behaves exactly as gun-at-centre.
+    Vec3 GunOrigin = default
 );

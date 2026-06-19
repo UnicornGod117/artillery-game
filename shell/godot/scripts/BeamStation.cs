@@ -8,9 +8,12 @@ using FiringSolution.Core.Content;
 namespace FiringSolution.Shell;
 
 /// <summary>
-/// Direction B — cool ice-glass surveillance, relativistic particle beam. Lead
-/// is ~zero (near-c); the work is energy &amp; γ. Scored on two gates: pointing
-/// accuracy AND delivered pulse energy ≥ kill threshold.
+/// Direction B — cool ice-glass surveillance, relativistic particle WARHEAD. A
+/// long-range (light-second) intercept: the warhead carries a fuse that fires after
+/// τ seconds on its OWN clock, and time dilation stretches that to γ·τ for us, so it
+/// detonates at d = βγ·c·τ. The player works bearing/elevation/range out of the target
+/// COORDINATE, then solves the launch SPEED β whose dilation lands the blast on target.
+/// Scored on two gates: pointing accuracy AND detonation range.
 /// </summary>
 public partial class BeamStation : StationView
 {
@@ -18,9 +21,11 @@ public partial class BeamStation : StationView
     private static int _seed = -1;        // current mission seed (kept across tier changes)
     private static int _tier = 3;         // difficulty tier (selectable; beam min is 1)
     private Mission _mission = null!;
-    private double _az, _el, _zc = 0, _en = 4.2; // pulse energy, GJ
+    private double _az, _el, _zc = 0, _beta = 90.0; // particle speed, % of c
 
-    private Label _enLabel = null!;
+    private Label _betaLabel = null!;
+
+    private double Ls => Constants.C; // metres per light-second
 
     protected override Palette BuildPalette() => Palette.Ice;
 
@@ -32,19 +37,33 @@ public partial class BeamStation : StationView
 
         _mission = GameEngine.GenerateMission(new DifficultySliders(
             WeaponKind.Beam, MathFidelity: _tier, Triangulation: 0.25, Circumstance: 0.6, Seed: _seed));
-        _az = Math.Round(_mission.BeamObserved!.Bearing);
-        _el = Math.Round(_mission.BeamObserved!.LosElevation);
+        // Do NOT pre-aim. Bearing, elevation, range and speed are all the player's to work
+        // out from the coordinates; start the emitter pointing due north, flat, slow.
+        _az = 0;
+        _el = 0;
 
         return MakeTopBar(
-            "DEW-02 · STATION BETA · Relativistic beam",
+            "DEW-02 · STATION BETA · Relativistic warhead",
             new[]
             {
-                ("WPN · RELATIVISTIC BEAM", true),
+                ("WPN · RELATIVISTIC WARHEAD", true),
                 ("WORLD · " + _mission.World.Name, false),
                 (_mission.Id, false),
             },
             "CAPACITOR CHARGE",
             _tier, 1, t => { _tier = t; (GetParent() as Main)?.ReloadStation(); });
+    }
+
+    /// <summary>Observed gun-relative geometry → absolute battlespace coordinate (ENU metres).</summary>
+    private Vec3 TargetAbs()
+    {
+        var o = _mission.BeamObserved!;
+        double losR = Constants.DegToRad(o.LosElevation);
+        double horiz = o.SlantRange * Math.Cos(losR);
+        double up = o.SlantRange * Math.Sin(losR);
+        double br = Constants.DegToRad(o.Bearing);
+        var g = _mission.GunOrigin;
+        return new Vec3(g.X + horiz * Math.Sin(br), g.Y + horiz * Math.Cos(br), g.Z + up);
     }
 
     protected override Control BuildLeftPanel()
@@ -54,39 +73,38 @@ public partial class BeamStation : StationView
         v.AddThemeConstantOverride("separation", 16);
         panel.AddChild(v);
         var o = _mission.BeamObserved!;
+        Vec3 g = _mission.GunOrigin;
+        Vec3 tgt = TargetAbs();
 
-        // Real mission geometry: engagement altitude from the line-of-sight triangle.
-        double losRad = Constants.DegToRad(o.LosElevation);
-        double tgtAltKm = o.SlantRange * Math.Sin(losRad) / 1000.0;
-
-        v.AddChild(Ui.SectionHeader(P, "Environment", P.Accent, "MEASURED"));
-        var windRow = new HBoxContainer();
-        windRow.AddThemeConstantOverride("separation", 14);
-        windRow.AddChild(new Compass { P = P, FromDeg = o.Bearing });
-        var wc = new VBoxContainer();
-        wc.AddThemeConstantOverride("separation", 2);
-        wc.AddChild(Ui.Text("CLOSING VELOCITY", P.Faint, 9));
-        wc.AddChild(Ui.Text($"{o.Closing:0} m/s", P.Text, 21));
-        wc.AddChild(Ui.Text($"BEARING {o.Bearing:000.0}°", P.AccentDim, 11));
-        windRow.AddChild(wc);
-        v.AddChild(windRow);
-        // Only the data the engagement actually turns on — pointing is set by the LOS
-        // geometry; thermal/air figures the model doesn't use are left off the panel.
+        // Environment — closing velocity of the intercept (flavour). No bearing compass:
+        // the bearing is exactly what the player must derive from the coordinates.
+        v.AddChild(Ui.SectionHeader(P, "Track", P.Accent, "MEASURED"));
         v.AddChild(MetricGrid(new[]
         {
-            ("TGT ALTITUDE", $"{tgtAltKm:0.0} km"),
-            ("LOCAL g", $"{o.LocalG:0.00} m/s²"),
+            ("CLOSING VELOCITY", $"{o.Closing / 1000:0.00} km/s"),
+            ("WARHEAD FUSE τ", $"{o.FuseSeconds:0} s"),
         }, P.Text));
 
-        v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SENSOR"));
+        // Your position (emitter) — an absolute grid coordinate in light-seconds.
+        v.AddChild(Ui.SectionHeader(P, "Your Position — Emitter", P.Accent, "GRID · ls"));
         v.AddChild(MetricGrid(new[]
         {
-            ("SLANT RANGE · 0.1 km", $"{o.SlantRange / 1000:0.0} km"),
-            ("BEARING · 0.1°", $"{o.Bearing:0.0} °"),
-            ("LOS ELEVATION · 0.1°", $"{o.LosElevation:0.0} °"),
-            ("CLOSING · 1 m/s", $"{o.Closing:0} m/s"),
-        }, P.Text));
-        v.AddChild(Ui.Text("↳ Near-c flight makes lead negligible — the work is energy & γ.", P.Faint, 9));
+            ("EASTING · ls", $"{g.X / Ls:0.000}"),
+            ("NORTHING · ls", $"{g.Y / Ls:0.000}"),
+            ("ALTITUDE · ls", $"{g.Z / Ls:0.000}"),
+        }, new Color("aebecb"), 14));
+
+        // Target — a COORDINATE, not a bearing/range/elevation. Work the geometry yourself:
+        // bearing & elevation to point, and the slant range R for the speed solve.
+        v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SENSOR · ls"));
+        v.AddChild(MetricGrid(new[]
+        {
+            ("EASTING · ls", $"{tgt.X / Ls:0.000}"),
+            ("NORTHING · ls", $"{tgt.Y / Ls:0.000}"),
+            ("ALTITUDE · ls", $"{tgt.Z / Ls:0.000}"),
+            ("MOTION", "TRACKING"),
+        }, new Color("e9dcdc")));
+        v.AddChild(Ui.Text("↳ Lead ≈ 0. Derive bearing, elevation & the slant range R from the coordinates.", P.Faint, 9));
 
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
         var profBox = Ui.Panel(P.PanelDeep, P.Border, pad: 9, borderW: 1);
@@ -99,7 +117,7 @@ public partial class BeamStation : StationView
         v.AddChild(MetricGrid(new[]
         {
             ("REST MASS m₀", "938 MeV/c²"),
-            ("BEAM β", $"{_mission.BeamWeapon!.Beta:0.000} c"),
+            ("PROTONS / PULSE N", $"{_mission.BeamWeapon!.ParticleCount:0.0e0}"),
         }, new Color("aebecb"), 13));
 
         return panel;
@@ -111,51 +129,51 @@ public partial class BeamStation : StationView
         var v = new VBoxContainer();
         v.AddThemeConstantOverride("separation", 14);
         panel.AddChild(v);
+        var o = _mission.BeamObserved!;
 
         v.AddChild(Ui.SectionHeader(P, "Firing Solution — Your Input", P.Accent));
-        v.AddChild(Ui.Text("↳ point the emitter & set pulse energy. The board never solves it.", P.Faint, 9));
-        v.AddChild(Ui.Text("↳ required precision: pointing within the on-axis tolerance; deliver E ≥ the shown kill threshold (0.1 GJ).", P.AccentDim, 9));
+        v.AddChild(Ui.Text("↳ point the emitter & dial the launch SPEED. The board never solves it.", P.Faint, 9));
+        v.AddChild(Ui.Text("↳ the fuse fires after τ on the warhead's clock; dilation stretches it to γτ, so it detonates at d = βγcτ.", P.AccentDim, 9));
+        v.AddChild(Ui.Text("   solve β to land d on the target: k = R/(c·τ) = (R in light-seconds)/τ,  β = k/√(1 + k²). Too fast overshoots.", P.Faint, 8));
 
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 11);
         grid.AddThemeConstantOverride("v_separation", 11);
         v.AddChild(grid);
 
-        AddNumberField(grid, "AZIMUTH (x) · ° · ±0.1°", _az.ToString("0.0"), 0.1,
-            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
-        AddNumberField(grid, "ELEVATION (y) · ° · ±0.1°", _el.ToString("0.0"), 0.1,
-            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
-        AddNumberField(grid, "Z-CORR (cross) · ° · ±0.1°", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
-            d => { _zc = d; });
-        AddNumberField(grid, "PULSE ENERGY · GJ · ±0.1", _en.ToString("0.0"), 0.5,
-            d => { _en = d; RefreshRegime(); },
-            clamp: d => Math.Max(0, d));
+        AddNumberField(grid, "AZIMUTH (x) · ° · ±0.01°", _az.ToString("0.00"), 0.1,
+            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); }, format: "0.00");
+        AddNumberField(grid, "ELEVATION (y) · ° · ±0.01°", _el.ToString("0.00"), 0.1,
+            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); }, format: "0.00");
+        AddNumberField(grid, "Z-CORR (cross) · ° · ±0.01°", _zc.ToString("+0.00;-0.00;0.00"), 0.1,
+            d => { _zc = d; }, format: "+0.00;-0.00;0.00");
+        AddNumberField(grid, "LAUNCH SPEED · % c · ±0.0001", _beta.ToString("0.0000"), 0.01,
+            d => { _beta = d; RefreshRegime(); },
+            clamp: d => Math.Clamp(d, 0, 99.9999), format: "0.0000");
 
         var fire = Ui.PrimaryButton(P, "◆  COMMIT & FIRE");
         fire.Pressed += Fire;
         FireButton = fire;
         v.AddChild(fire);
 
-        // Beam parameters. Only the published specs are shown: the beam's β (a weapon
-        // figure) and the kill threshold. γ and the rest are the player's to derive —
-        // the panel no longer states what to solve for or pre-computes the Lorentz factor.
-        double beta = _mission.BeamWeapon!.Beta;
+        // Intercept parameters. Only published specs are shown: the fuse τ and the
+        // detonation window the warhead must land in. β is the player's input (echoed back);
+        // γ and R stay theirs to derive — the panel never pre-computes them.
         var reg = Ui.Panel(P.PanelDeep, P.Border, pad: 12, borderW: 1);
         var rv = new VBoxContainer();
         rv.AddThemeConstantOverride("separation", 8);
-        rv.AddChild(Ui.Text("BEAM PARAMETERS", P.TextDim, 10));
+        rv.AddChild(Ui.Text("INTERCEPT", P.TextDim, 10));
         rv.AddChild(MetricGrid(new[]
         {
-            ("BEAM β", $"{beta:0.000} c"),
-            ("KILL THRESHOLD · GJ", $"≥ {_mission.BeamObserved!.KillEnergyGJ:0.0}"),
+            ("FUSE τ · s", $"{o.FuseSeconds:0}"),
+            ("DET. WINDOW · ± ls", $"{o.DetonationToleranceMeters / Ls:0.000}"),
         }, P.Text, 14));
-        // Live pulse-energy readout (echoes the player's input).
-        var pr = new HBoxContainer();
-        pr.AddChild(Ui.Text("PULSE ENERGY (set)", P.Faint, 9));
-        pr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        _enLabel = Ui.Text($"{_en:0.0} GJ", P.Accent, 14);
-        pr.AddChild(_enLabel);
-        rv.AddChild(pr);
+        var betaRow = new HBoxContainer();
+        betaRow.AddChild(Ui.Text("LAUNCH SPEED (set)", P.Faint, 9));
+        betaRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        _betaLabel = Ui.Text($"{_beta:0.0000} % c", P.Accent, 14);
+        betaRow.AddChild(_betaLabel);
+        rv.AddChild(betaRow);
         reg.AddChild(rv);
         v.AddChild(reg);
 
@@ -166,7 +184,7 @@ public partial class BeamStation : StationView
         v.AddChild(calcBtn);
 
         // Handbook (opens the Core's formula reference) + Help / Give up.
-        var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Relativity / Thermal / Vectors", P.Accent, P.Border, 10);
+        var hbk = Ui.FlatButton(P, "▤  HANDBOOK · Relativity / Dilation / Vectors", P.Accent, P.Border, 10);
         hbk.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         hbk.Pressed += () => HandbookView.Open(this, P, Handbook.HelpHint("beam"));
         v.AddChild(hbk);
@@ -187,77 +205,108 @@ public partial class BeamStation : StationView
         return panel;
     }
 
+    /// <summary>Round up to a tidy 1/2/5×10ⁿ step for the range rings.</summary>
+    private static double NiceStep(double x)
+    {
+        if (x <= 0) return 1;
+        double pow = Math.Pow(10, Math.Floor(Math.Log10(x)));
+        double m = x / pow;
+        double nice = m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10;
+        return nice * pow;
+    }
+
     protected override void Configure()
     {
+        double R = _mission.BeamObserved!.SlantRange;
+
         Board.P = P; Board.IsBeam = true;
-        Board.PxPerMeter = 0.0098f;
-        Board.RingStepM = 10000; Board.RingCount = 4;
-        Board.TargetRange = _mission.BeamObserved!.SlantRange;
+        Board.UnitMeters = Ls; Board.UnitLabel = "ls";
+        // Auto-scale the rings to the (light-second) engagement, keeping the plotted radius
+        // roughly constant so the long-range box still fits on screen.
+        double ringStep = NiceStep(R / Ls / 4) * Ls;
+        int ringCount = (int)Math.Clamp(Math.Ceiling(R * 1.15 / ringStep) + 1, 4, 8);
+        double coverage = ringStep * ringCount;
+        Board.RingStepM = ringStep; Board.RingCount = ringCount;
+        Board.PxPerMeter = (float)(300.0 / coverage);
+        Board.TargetRange = R;
         Board.TargetBearing = _mission.BeamObserved!.Bearing;
-        Board.TargetLabel = "TGT · AIRCRAFT";
+        Board.TargetLabel = "TGT · ORBITAL ASSET";
         Board.AimAzimuth = _az;
+        Board.GunOriginM = new Vector2((float)_mission.GunOrigin.X, (float)_mission.GunOrigin.Y);
 
         VPlane.P = P; VPlane.IsBeam = true;
+        VPlane.UnitMeters = Ls; VPlane.UnitLabel = "ls";
         VPlane.AimElevation = _el;
-        double s = _mission.BeamObserved!.SlantRange;
         double losEl = Constants.DegToRad(_mission.BeamObserved!.LosElevation);
-        VPlane.TargetRange = s * Math.Cos(losEl);
-        VPlane.TargetAltitude = s * Math.Sin(losEl);
-        VPlane.SetScale(s * 1.05, s * Math.Sin(losEl) * 1.6 + 1000);
+        VPlane.TargetRange = R * Math.Cos(losEl);
+        VPlane.TargetAltitude = R * Math.Sin(losEl);
+        VPlane.SetScale(R * 1.05, R * Math.Sin(losEl) * 1.6 + Ls * 0.05);
     }
 
     protected override void Refresh() => RefreshRegime();
 
     private void RefreshRegime()
     {
-        _enLabel.Text = $"{_en:0.0} GJ";
+        _betaLabel.Text = $"{_beta:0.0000} % c";
     }
 
     private void Fire()
     {
-        BeamResult r = GameEngine.FireBeam(_mission, _az, _el, _en * 1e9);
+        double beta = _beta / 100.0;
+        BeamResult r = GameEngine.FireBeam(_mission, _az, _el, beta);
         ShotNo++;
 
+        double d = r.Score.DetonationDistance;                 // where the dilated fuse fired
+        double tDet = beta > 1e-9 ? d / (beta * Constants.C) : 0.01; // = γ·τ, the real flight time
+
         Board.HasFired = true;
-        Board.FiredRange = _mission.BeamObserved!.SlantRange;
+        Board.FiredRange = d;
         Board.FiredBearing = _az;
         Board.FiredHit = r.Score.Hit;
-        Board.BeginImpactAnim();
 
         double el = Constants.DegToRad(_el);
-        double s = _mission.BeamObserved!.SlantRange;
         VPlane.Arc = new List<Vector2>
         {
             new(0, 0),
-            new((float)(s * Math.Cos(el)), (float)(s * Math.Sin(el))),
+            new((float)(d * Math.Cos(el)), (float)(d * Math.Sin(el))),
         };
         VPlane.FiredHit = r.Score.Hit;
-        VPlane.BeginArcAnim();
+
+        // One sim clock drives both views over the warhead's REAL (time-dilated) flight time.
+        BeginShotAnimation(tDet);
 
         Color acc = r.Score.Hit ? P.Accent : P.Red;
         StartCooldown(45.0);
-        if (r.Score.Hit) AwardCareer(1100);
-        string heading = r.Score.Hit ? "◆ TARGET NEUTRALISED" : (r.Score.OnAxis ? "△ UNDER-POWERED" : "△ OFF-AXIS");
+        if (r.Score.Hit) AwardCareer(1400);
+
+        string heading = r.Score.Hit ? "◆ TARGET NEUTRALISED"
+            : !r.Score.OnAxis ? "△ OFF-AXIS"
+            : r.Score.RangeError < 0 ? "△ DETONATED SHORT" : "△ OVERSHOT";
+        double errLs = r.Score.RangeError / Ls;
         SetLastShot(heading, acc,
             new[]
             {
                 ("SHOT NO.", ShotNo.ToString("00"), P.Text),
-                ("LATERAL MISS", $"{Math.Round(r.Score.LateralMiss)} m", acc),
-                ("ANG. ERROR", $"{r.Score.AngError:0.00}°", P.Text),
-                ("DELIVERED", $"{_en:0.0} GJ", r.Score.EnergyOk ? new Color("aebecb") : P.Red),
+                ("ANG. ERROR", $"{r.Score.AngError:0.000}°", P.Text),
+                ("DET. RANGE ERR", $"{errLs:+0.000;-0.000} ls", acc),
+                ("FLIGHT TIME", $"{tDet:0.0} s", P.Text),
             },
-            r.Score.Hit ? "thermal kill confirmed." : (r.Score.OnAxis ? "on-axis but flux too low." : "re-point the emitter."));
+            r.Score.Hit ? "warhead detonated on target."
+                : !r.Score.OnAxis ? "re-point the emitter."
+                    : r.Score.RangeError < 0 ? "fuse fired short — raise β for more dilation."
+                        : "overshot — lower β.");
     }
 
     private void RevealSolution()
     {
         var t = _mission.BeamTarget!;
+        double beta = GameEngine.RevealBeamBeta(_mission) * 100.0;
         SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
             new[]
             {
-                ("AZIMUTH", $"{t.Bearing:0.0}°", P.Text),
-                ("ELEVATION", $"{t.LosElevation:0.0}°", P.Text),
-                ("PULSE ENERGY", $"≥ {t.KillEnergyJoules / 1e9:0.0} GJ", P.Text),
+                ("AZIMUTH", $"{t.Bearing:0.00}°", P.Text),
+                ("ELEVATION", $"{t.LosElevation:0.00}°", P.Text),
+                ("LAUNCH SPEED", $"{beta:0.0000} % c", P.Text),
             },
             "one valid firing solution shown.");
     }

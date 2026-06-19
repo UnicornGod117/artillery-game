@@ -39,20 +39,35 @@ public class ScoringTests
     }
 
     [Fact]
-    public void Beam_RequiresBothPointingAndEnergy()
+    public void Beam_RequiresPointingAndDetonationRange()
     {
         var w = Content.Munitions.ProtonFocused();
-        // On axis but under-powered → miss.
-        var weak = Relativistic.SimulateBeam(w, 40000, 100, 12, 2.0e9);
-        var weakScore = Scoring.ScoreBeam(weak, 100, 12, 100, 12, 40000, 3.5e9, 0.18);
-        Assert.True(weakScore.OnAxis);
-        Assert.False(weakScore.EnergyOk);
-        Assert.False(weakScore.Hit);
+        double R = 1.2e10, fuse = 18, tol = 6e7;
+        double beta = Relativistic.SpeedForFuseRange(R, fuse); // the speed the kill is tuned to
 
-        // On axis and powered → hit.
-        var good = Relativistic.SimulateBeam(w, 40000, 100, 12, 4.0e9);
-        var goodScore = Scoring.ScoreBeam(good, 100, 12, 100, 12, 40000, 3.5e9, 0.18);
-        Assert.True(goodScore.Hit);
+        // On axis at the solved speed → dilated fuse detonates on target → hit.
+        var good = Relativistic.SimulateBeam(w, R, 100, 12, beta);
+        var g = Scoring.ScoreBeam(good, 100, 12, 100, 12, R, fuse, tol, 0.18);
+        Assert.True(g.Hit);
+
+        // Too slow → less dilation, fuse fires short → miss.
+        var slow = Relativistic.SimulateBeam(w, R, 100, 12, beta * 0.9);
+        var s = Scoring.ScoreBeam(slow, 100, 12, 100, 12, R, fuse, tol, 0.18);
+        Assert.True(s.OnAxis);
+        Assert.False(s.DetonationOk);
+        Assert.True(s.RangeError < 0);
+
+        // Too fast (β maxed) → overshoots → miss: it's a window, not a floor.
+        var fast = Relativistic.SimulateBeam(w, R, 100, 12, 0.999);
+        var f = Scoring.ScoreBeam(fast, 100, 12, 100, 12, R, fuse, tol, 0.18);
+        Assert.True(f.OnAxis);
+        Assert.False(f.DetonationOk);
+        Assert.True(f.RangeError > 0);
+
+        // Off-axis but perfectly timed → still a miss (pointing is an independent gate).
+        var off = Scoring.ScoreBeam(good, 101, 12, 100, 12, R, fuse, tol, 0.18);
+        Assert.False(off.OnAxis);
+        Assert.False(off.Hit);
     }
 }
 

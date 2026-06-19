@@ -6,21 +6,23 @@ namespace FiringSolution.Core.Tests;
 
 /// <summary>
 /// Regression tests for fairness/solvability bugs found while finishing the game:
-/// the beam kill-energy readout must be honestly achievable, and the kinetic
+/// the beam kill-energy window must be honestly achievable, and the kinetic
 /// give-up must reveal a working solution even when crosswind forces an azimuth lead.
 /// </summary>
 public class BeamSolvabilityTests
 {
     [Fact]
-    public void DisplayedKillEnergy_ExactlyMatchesTruth()
+    public void DisplayedGeometry_ExactlyMatchesTruth()
     {
-        // The instrument reads out a published spec, not a noisy measurement — so the
-        // shown threshold must equal the true gate, never round below it.
+        // The instrument reads out the true geometry (no spotter loop to correct against),
+        // so the shown slant range, fuse and detonation window must equal the truth.
         for (int seed = 0; seed < 30; seed++)
         {
             var m = GameEngine.GenerateMission(new DifficultySliders(
                 WeaponKind.Beam, MathFidelity: 2, Circumstance: 0.7, Seed: seed));
-            Assert.Equal(m.BeamTarget!.KillEnergyJoules, m.BeamObserved!.KillEnergyGJ * 1e9, 1.0);
+            Assert.Equal(m.BeamTarget!.SlantRange, m.BeamObserved!.SlantRange, 1.0);
+            Assert.Equal(m.BeamTarget!.FuseProperTime, m.BeamObserved!.FuseSeconds, 1e-9);
+            Assert.Equal(m.BeamTarget!.DetonationToleranceMeters, m.BeamObserved!.DetonationToleranceMeters, 1.0);
         }
     }
 
@@ -28,18 +30,54 @@ public class BeamSolvabilityTests
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    public void DeliveringDisplayedEnergy_OnAxis_IsAlwaysAKill(int tier)
+    public void SolvingTheRequiredSpeed_OnAxis_IsAlwaysAKill(int tier)
     {
-        // A player who points at the true LOS and delivers exactly the displayed
-        // kill energy must score a kill — the readout cannot be a trap. (Beam sims
-        // are O(1), so a wide seed sweep here is cheap.)
+        // A player who points at the true LOS and dials the β whose dilated fuse detonates
+        // at the target must score a kill. The reveal does exactly that inversion:
+        // k = R/(c·τ), β = k/√(1 + k²).
         for (int seed = 0; seed < 40; seed++)
         {
             var m = GameEngine.GenerateMission(new DifficultySliders(
                 WeaponKind.Beam, MathFidelity: tier, Circumstance: 0.7, Seed: seed));
             var t = m.BeamTarget!;
-            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, m.BeamObserved!.KillEnergyGJ * 1e9);
-            Assert.True(r.Score.Hit, $"beam tier {tier} seed {seed} should be killable at the shown energy.");
+            double beta = GameEngine.RevealBeamBeta(m);
+            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, beta);
+            Assert.True(r.Score.Hit, $"beam tier {tier} seed {seed} should be killable at the solved speed.");
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void MaxingTheSpeed_Overshoots_AndMisses(int tier)
+    {
+        // Detonation range is a window, not a floor: cranking β to the ceiling dilates the
+        // fuse far too long, so the warhead overshoots the target — a miss even on-axis.
+        for (int seed = 0; seed < 40; seed++)
+        {
+            var m = GameEngine.GenerateMission(new DifficultySliders(
+                WeaponKind.Beam, MathFidelity: tier, Circumstance: 0.7, Seed: seed));
+            var t = m.BeamTarget!;
+            var r = GameEngine.FireBeam(m, t.Bearing, t.LosElevation, 0.999);
+            Assert.False(r.Score.Hit, $"beam tier {tier} seed {seed} must not be winnable by maxing β.");
+            Assert.True(r.Score.RangeError > 0, "maxed β overshoots the detonation range.");
+        }
+    }
+
+    [Fact]
+    public void LongRangeBeam_HasMinutesScaleFlightTime()
+    {
+        // The whole point of the long-range battlespace: at the solved speed the flight is
+        // seconds-to-minutes (γ·τ), not sub-millisecond — long enough to simulate & animate.
+        for (int seed = 0; seed < 20; seed++)
+        {
+            var m = GameEngine.GenerateMission(new DifficultySliders(
+                WeaponKind.Beam, MathFidelity: 2, Circumstance: 0.5, Seed: seed));
+            var t = m.BeamTarget!;
+            var shot = Engine.Relativistic.SimulateBeam(
+                m.BeamWeapon!, t.SlantRange, t.Bearing, t.LosElevation, GameEngine.RevealBeamBeta(m));
+            Assert.InRange(shot.FlightTime, 5.0, 400.0);
         }
     }
 }

@@ -29,6 +29,20 @@ public partial class PlottingBoard : Control
     public double TargetRange = 8600, TargetBearing = 41.7;
     public string TargetLabel = "TGT";
 
+    // Absolute position of the gun on the battlespace grid (ENU east/north, metres). The
+    // grid, the cursor readout and the markers all read in these absolute coordinates, so
+    // the board never hands the player a bare "range & bearing to target" — that geometry
+    // is theirs to measure or compute from the coordinates.
+    public Vector2 GunOriginM = Vector2.Zero;
+
+    // Display units for the grid/coordinates/scale: metres-per-unit and a label. Kinetic
+    // works in km (1000 m); the long-range beam battlespace works in light-seconds.
+    public double UnitMeters = 1000.0;
+    public string UnitLabel = "km";
+
+    // Zoom envelope — generous so the player can pull right in on a marker to plot by hand.
+    private const float ZoomMin = 0.35f, ZoomMax = 24f;
+
     // Spotter / observation post — a known friendly position the player triangulates
     // a correction from. Set by the station; drawn so the board geometry is legible.
     public bool HasSpotter = false;
@@ -97,6 +111,19 @@ public partial class PlottingBoard : Control
         return b < 0 ? b + 360 : b;
     }
 
+    /// <summary>Gun-relative metres (E,N) → absolute battlespace coordinate (metres).</summary>
+    private Vector2 AbsMetres(Vector2 relM) => GunOriginM + relM;
+
+    /// <summary>Gun-relative polar (range m, bearing deg) → absolute coordinate (metres).</summary>
+    private Vector2 AbsMetres(double rangeM, double bearingDeg)
+    {
+        float br = Mathf.DegToRad((float)bearingDeg);
+        return AbsMetres(new Vector2((float)rangeM * Mathf.Sin(br), (float)rangeM * Mathf.Cos(br)));
+    }
+
+    private string Coord(Vector2 absM)
+        => $"E {absM.X / UnitMeters:0.000} · N {absM.Y / UnitMeters:0.000} {UnitLabel}";
+
     // ----- tool control (called by the station's board toolbar) -------------
 
     public void SetTool(Tool t)
@@ -150,9 +177,9 @@ public partial class PlottingBoard : Control
         if (@event is InputEventMouseButton mb)
         {
             if (mb.ButtonIndex == MouseButton.WheelUp && mb.Pressed)
-                _zoom = Mathf.Clamp(_zoom * 1.12f, 0.6f, 3f);
+                ZoomAt(mb.Position, 1.12f);
             else if (mb.ButtonIndex == MouseButton.WheelDown && mb.Pressed)
-                _zoom = Mathf.Clamp(_zoom * 0.89f, 0.6f, 3f);
+                ZoomAt(mb.Position, 0.89f);
             else if (mb.ButtonIndex == MouseButton.Middle)
                 StartStopPan(mb.Pressed, mb.Position);                // middle-drag pans in any tool
             else if (mb.ButtonIndex == MouseButton.Left)
@@ -263,18 +290,33 @@ public partial class PlottingBoard : Control
     }
 
     public void ResetView() { _pan = Vector2.Zero; _zoom = 1f; QueueRedraw(); }
-    public void ZoomBy(float m) { _zoom = Mathf.Clamp(_zoom * m, 0.6f, 3f); QueueRedraw(); }
+
+    /// <summary>Zoom by a factor about the board centre (the +/− buttons).</summary>
+    public void ZoomBy(float m) => ZoomAt(Size / 2f, m);
+
+    /// <summary>Zoom by a factor while keeping the world point under <paramref name="at"/> fixed.</summary>
+    private void ZoomAt(Vector2 at, float m)
+    {
+        float newZoom = Mathf.Clamp(_zoom * m, ZoomMin, ZoomMax);
+        if (Mathf.IsEqualApprox(newZoom, _zoom)) return;
+        Vector2 pm = ToMetres(at);          // world point under the cursor, before zoom
+        _zoom = newZoom;
+        float k = PxPerMeter * _zoom;
+        _pan = at - new Vector2(pm.X, -pm.Y) * k - Gun;
+        QueueRedraw();
+    }
 
     // ----- impact animation -------------------------------------------------
 
-    /// <summary>Start the post-fire fly-out: the round travels from the gun to the impact.</summary>
-    public void BeginImpactAnim() { _impactAnim = 0f; _animating = true; SetProcess(true); QueueRedraw(); }
+    /// <summary>Arm the post-fire fly-out; the station's single sim clock drives the progress.</summary>
+    public void BeginImpactAnim() { _impactAnim = 0f; _animating = true; QueueRedraw(); }
 
-    public override void _Process(double delta)
+    /// <summary>Set fly-out progress (0..1). Called each frame by the station's one clock, so
+    /// the on-screen travel takes the round's real (time-scaled) flight time.</summary>
+    public void SetAnimProgress(float p)
     {
-        if (!_animating) { SetProcess(false); return; }
-        _impactAnim += (float)delta / 0.55f;   // ~0.55 s flight
-        if (_impactAnim >= 1f) { _impactAnim = 1f; _animating = false; }
+        _impactAnim = Mathf.Clamp(p, 0f, 1f);
+        _animating = _impactAnim < 1f;
         QueueRedraw();
     }
 
@@ -294,7 +336,7 @@ public partial class PlottingBoard : Control
         {
             float r = (float)(i * RingStepM) * K;
             DrawArc(gunC, r, 0, Mathf.Tau, 96, P.Border, 1.0f, true);
-            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / 1000).ToString("0") + "km",
+            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / UnitMeters).ToString("0.###") + UnitLabel,
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
@@ -309,6 +351,8 @@ public partial class PlottingBoard : Control
         DrawArc(gunC, 3, 0, Mathf.Tau, 16, P.Accent, 1.5f, true);
         DrawString(font, gunC + new Vector2(-18, 22), IsBeam ? "EMITTER" : "GUN FCS-01",
             HorizontalAlignment.Left, -1, 8, P.AccentDim);
+        DrawString(font, gunC + new Vector2(-18, 33), Coord(GunOriginM),
+            HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Heading tick — a SHORT fixed-length stub showing only the bearing you dialled
         // in. Too short to reach the target, so it can never reveal alignment or whether
@@ -318,7 +362,7 @@ public partial class PlottingBoard : Control
         Vector2 aimDir = new(Mathf.Sin(abr), -Mathf.Cos(abr));
         Vector2 aimEnd = gunC + aimDir * headingPx;
         DrawDashed(gunC, aimEnd, P.Accent, 1.4f, 6, 4);
-        DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.0}°",
+        DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.00}°",
             HorizontalAlignment.Left, -1, 8, P.Accent);
 
         // Spotter / observation post.
@@ -331,10 +375,13 @@ public partial class PlottingBoard : Control
             DrawString(font, sp + new Vector2(9, -2), SpotterLabel, HorizontalAlignment.Left, -1, 8, P.TextDim);
         }
 
-        // Observed target marker.
+        // Observed target marker — labelled with its battlespace COORDINATE, not a range
+        // and bearing. Converting the coordinate into a firing solution is the player's job.
         Vector2 tgt = World(TargetRange, TargetBearing);
         DrawTargetMark(tgt, P.Red);
-        DrawString(font, tgt + new Vector2(10, -2), $"{TargetLabel} · {TargetRange / 1000:0.00}km",
+        DrawString(font, tgt + new Vector2(10, -2), TargetLabel,
+            HorizontalAlignment.Left, -1, 8, P.Red);
+        DrawString(font, tgt + new Vector2(10, 9), Coord(AbsMetres(TargetRange, TargetBearing)),
             HorizontalAlignment.Left, -1, 8, P.Red);
 
         // Fired result — animated fly-out from the gun, then the impact mark.
@@ -372,7 +419,7 @@ public partial class PlottingBoard : Control
         Vector2 sb = new(28, Size.Y - 22);
         DrawLine(sb, sb + new Vector2(barPx, 0), P.Faint, 1.5f);
         DrawString(font, sb + new Vector2(0, -6), "0", HorizontalAlignment.Left, -1, 8, P.Faint);
-        DrawString(font, sb + new Vector2(barPx - 14, -6), $"{RingStepM / 1000:0}km",
+        DrawString(font, sb + new Vector2(barPx - 18, -6), $"{RingStepM / UnitMeters:0.###}{UnitLabel}",
             HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Active-tool hint + live cursor readout.
@@ -385,12 +432,13 @@ public partial class PlottingBoard : Control
             _ => "PAN · drag to move · scroll to zoom",
         };
         DrawString(font, new Vector2(10, 16), hint, HorizontalAlignment.Left, -1, 8, P.TextDim);
-        // Live cursor readout — always on, so the board is never a mystery to read.
+        // Live cursor readout — battlespace COORDINATE only (no range/bearing-to-gun). To
+        // turn coordinates into a firing solution, measure with the RULER or do the trig.
         if (_hasHover)
         {
-            double cr = _hoverM.Length();
+            Vector2 abs = AbsMetres(_hoverM);
             DrawString(font, new Vector2(10, Size.Y - 8),
-                $"CURSOR  {cr / 1000:0.00} km  ·  BRG {Bearing(_hoverM):0.0}°  ·  E {_hoverM.X / 1000:+0.00;-0.00} N {_hoverM.Y / 1000:+0.00;-0.00} km",
+                $"CURSOR  E {abs.X / 1000:0.00}  ·  N {abs.Y / 1000:0.00} km",
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
@@ -412,17 +460,17 @@ public partial class PlottingBoard : Control
             if (x >= 0 && x <= Size.X)
             {
                 DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), P.BorderSoft, 1);
-                if (i != 0)
-                    DrawString(font, new Vector2(x + 2, axisY - 3), $"{i * RingStepM / 1000:0}",
-                        HorizontalAlignment.Left, -1, 7, P.Faint);
+                // Absolute battlespace easting at this line (display units).
+                DrawString(font, new Vector2(x + 2, axisY - 3), $"{(GunOriginM.X + i * RingStepM) / UnitMeters:0.###}",
+                    HorizontalAlignment.Left, -1, 7, P.Faint);
             }
             float y = gunC.Y + i * step;
             if (y >= 0 && y <= Size.Y)
             {
                 DrawLine(new Vector2(0, y), new Vector2(Size.X, y), P.BorderSoft, 1);
-                if (i != 0)
-                    DrawString(font, new Vector2(axisX, y - 3), $"{-i * RingStepM / 1000:0}",
-                        HorizontalAlignment.Left, -1, 7, P.Faint);
+                // Absolute battlespace northing (screen-down is south, so subtract).
+                DrawString(font, new Vector2(axisX, y - 3), $"{(GunOriginM.Y - i * RingStepM) / UnitMeters:0.###}",
+                    HorizontalAlignment.Left, -1, 7, P.Faint);
             }
         }
     }
