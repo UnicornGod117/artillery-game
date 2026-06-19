@@ -17,9 +17,45 @@ public abstract partial class StationView : Control
     protected VBoxContainer LastShot = null!;
     protected Label CareerLabel = null!;
 
+    // Set by the concrete station so the base can throttle firing during reload.
+    protected Button FireButton = null!;
+    private ProgressBar _reloadBar = null!;
+    private double _cooldownLeft, _cooldownTotal;
+
     protected int ShotNo = 0;
 
     private Dictionary<PlottingBoard.Tool, Button> _toolButtons = new();
+
+    private static readonly string[] TierLabels = { "EASY", "MEDIUM I", "MEDIUM II", "HARD" };
+
+    /// <summary>Begin a reload cooldown: the fire button is locked while the bar refills.</summary>
+    protected void StartCooldown(double seconds)
+    {
+        _cooldownTotal = _cooldownLeft = seconds;
+        if (_reloadBar != null) _reloadBar.Value = 0;
+        if (FireButton != null) { FireButton.Disabled = true; FireButton.Text = "◆  RELOADING…"; }
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_cooldownLeft <= 0) return;
+        _cooldownLeft -= delta;
+        double frac = _cooldownTotal <= 0 ? 1 : 1 - _cooldownLeft / _cooldownTotal;
+        if (_reloadBar != null) _reloadBar.Value = System.Math.Clamp(frac * 100, 0, 100);
+        if (_cooldownLeft <= 0)
+        {
+            _cooldownLeft = 0;
+            if (_reloadBar != null) _reloadBar.Value = 100;
+            if (FireButton != null) { FireButton.Disabled = false; FireButton.Text = "◆  COMMIT & FIRE"; }
+        }
+        else if (FireButton != null)
+        {
+            FireButton.Text = $"◆  RELOADING…  {System.Math.Ceiling(_cooldownLeft)}s";
+        }
+    }
+
+    /// <summary>Overridden by stations to advance their seed before a NEW MISSION rebuild.</summary>
+    protected virtual void OnNewMission() { }
 
     /// <summary>Activate a board tool and highlight its toolbar button.</summary>
     private void SelectTool(PlottingBoard.Tool t)
@@ -80,7 +116,8 @@ public abstract partial class StationView : Control
 
     // ----- shared builders --------------------------------------------------
 
-    protected Control MakeTopBar(string subtitle, (string text, bool hi)[] chips, string reloadLabel)
+    protected Control MakeTopBar(string subtitle, (string text, bool hi)[] chips, string reloadLabel,
+        int tierIndex, int minTier, System.Action<int> onTierChange)
     {
         var bar = Ui.Panel(P.PanelDeep, P.Border, pad: 0, borderW: 0);
         bar.CustomMinimumSize = new Vector2(0, 46);
@@ -106,20 +143,27 @@ public abstract partial class StationView : Control
         foreach (var (text, hi) in chips)
             h.AddChild(Ui.Chip(P, text, hi));
 
+        // Difficulty selector — cycles tier and regenerates (design §6 sliders, kept
+        // simple as a single dial here). Beam stations pass minTier=1 (never trivial).
+        var diffBtn = Ui.FlatButton(P, "TIER · " + TierLabels[tierIndex] + "  ▸", P.Accent, P.AccentDim, 10);
+        diffBtn.TooltipText = "Change difficulty tier";
+        diffBtn.Pressed += () => { int next = tierIndex + 1; if (next > 3) next = minTier; onTierChange(next); };
+        h.AddChild(diffBtn);
+
         var reloadBox = new VBoxContainer();
         reloadBox.AddThemeConstantOverride("separation", 3);
         reloadBox.AddChild(Ui.Text(reloadLabel, P.Faint, 8));
-        var pb = new ProgressBar { Value = 73, ShowPercentage = false, CustomMinimumSize = new Vector2(128, 5) };
+        _reloadBar = new ProgressBar { Value = 100, ShowPercentage = false, CustomMinimumSize = new Vector2(128, 5) };
         var pbg = new StyleBoxFlat { BgColor = P.PanelDeep, BorderColor = P.Border };
         pbg.SetBorderWidthAll(1);
         var pfill = new StyleBoxFlat { BgColor = P.Accent };
-        pb.AddThemeStyleboxOverride("background", pbg);
-        pb.AddThemeStyleboxOverride("fill", pfill);
-        reloadBox.AddChild(pb);
+        _reloadBar.AddThemeStyleboxOverride("background", pbg);
+        _reloadBar.AddThemeStyleboxOverride("fill", pfill);
+        reloadBox.AddChild(_reloadBar);
         h.AddChild(reloadBox);
 
         var newMission = Ui.FlatButton(P, "↻ NEW MISSION", P.AccentDim, P.Border, 10);
-        newMission.Pressed += () => (GetParent() as Main)?.ReloadStation();
+        newMission.Pressed += () => { OnNewMission(); (GetParent() as Main)?.ReloadStation(); };
         h.AddChild(newMission);
 
         CareerLabel = Ui.Text($"CAREER {Career.Points:N0} PTS", P.TextDim, 11);
@@ -162,10 +206,13 @@ public abstract partial class StationView : Control
         var bRuler = Tool("RULER", () => SelectTool(PlottingBoard.Tool.Ruler));
         var bAngle = Tool("ANGLE", () => SelectTool(PlottingBoard.Tool.Protractor));
         var bPen = Tool("PEN", () => SelectTool(PlottingBoard.Tool.Pen));
+        var bErase = Tool("ERASE", () => SelectTool(PlottingBoard.Tool.Erase));
         _toolButtons = new() {
             [PlottingBoard.Tool.Pan] = bPan, [PlottingBoard.Tool.Ruler] = bRuler,
             [PlottingBoard.Tool.Protractor] = bAngle, [PlottingBoard.Tool.Pen] = bPen,
+            [PlottingBoard.Tool.Erase] = bErase,
         };
+        Tool("UNDO", () => Board.Undo(), dim: true);
         Tool("GRID", () => { Board.ToggleGrid(); }, dim: true);
         Tool("CLR", () => Board.ClearMeasurements(), dim: true);
         hb.AddChild(new Control { CustomMinimumSize = new Vector2(8, 0) });

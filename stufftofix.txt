@@ -1,10 +1,50 @@
-1. unable to change difficulties
-2. unable to delete stuff drawn on
-3. grid/map is unintuative and slightly too minimalist
-4. showing more information than is necessary for difficulty (why am i seeing air desnity for medium difficulty)
-unable to change the weopon
-5. add a little animation of the shell going + cooldown between each shot.
-6. when a miss is considered a "calibration shot" it shouldnt just immidiatley give all facts about the other one, just say how its off and stuff, ideally later a spotter will tell you where they see it relative to them, and the angle they saw it away from the target, and how far it was from them.
-7. be able to move around pop up windows
-8. dont have the cannon/gun immidiately have the right direction to the target, takes away half the game.
-9. for the reletavistic beam it shows "reletavistic regime" stats and tells us way more than it should, like what we're solving for.
+STUFF TO FIX — status
+
+[DONE] 1. unable to change difficulties
+        → top-bar difficulty selector (cycles EASY / MEDIUM I / MEDIUM II / HARD)
+          regenerates the mission in place. Beam minimum is MEDIUM I.
+
+[DONE] 2. unable to delete stuff drawn on
+        → board ERASE tool (click a measurement to delete it) + UNDO button,
+          alongside the existing CLR (clear all).
+
+[DONE] 3. grid/map is unintuitive and slightly too minimalist
+        → grid on by default with km coordinate labels, cardinal + 30° bearing
+          ticks around the outer ring, and an always-on cursor readout
+          (range / bearing / E,N).
+
+[DONE] 4. showing more information than is necessary for difficulty
+        → environment readouts are now gated by tier: wind only when wind is
+          modelled, air density / temp only when drag is on, local g only with
+          variable gravity. Easy shows "vacuum · flat ground · constant g".
+   ...   unable to change the weapon
+        → kinetic munition selector (tap the loaded round to cycle M-72 / M-81).
+
+[DONE] 5. add a little animation of the shell going + cooldown between each shot
+        → post-fire fly-out on the board and the vertical plane, plus a real
+          reload cooldown (fire button locks while the RELOAD bar refills).
+
+[DONE] 6. a miss shouldn't immediately hand over all the facts
+        → calibration shots now read back a SPOTTER (OP-1) report: range &
+          bearing to the round from the observation post, and how far off the
+          target it looked from there. Triangulate the correction yourself.
+
+[DONE] 7. be able to move around pop-up windows
+        → calculator and handbook windows are draggable by their title bar.
+
+[DONE] 8. don't have the gun immediately pointed at the target
+        → kinetic azimuth starts at 0° (due north); read the bearing and lay
+          the gun yourself.
+
+[DONE] 9. relativistic beam panel told you too much
+        → removed the pre-computed Lorentz γ and the "set pulse energy"
+          instruction; only the published specs (β, kill threshold) remain.
+
+[DONE] +  calculator crash on arcsine / bad error handling
+        → parser has a recursion-depth cap (a StackOverflow is uncatchable and
+          would crash the whole app); domain errors (asin/acos/sqrt/ln/log) and
+          NaN/∞ results are reported cleanly; the keypad handler can't throw out.
+
+[DONE] +  cannon range too small
+        → kinetic targets can now sit out to ~40 km (drag-free tiers); the
+          plotting board auto-scales its rings/zoom to the engagement.
