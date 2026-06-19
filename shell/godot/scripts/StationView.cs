@@ -22,6 +22,15 @@ public abstract partial class StationView : Control
     private ProgressBar _reloadBar = null!;
     private double _cooldownLeft, _cooldownTotal;
 
+    // The single physical sim clock for the shot fly-out. Sim time advances at
+    // real-time × the global play-rate; every view (and, later, target motion) reads it,
+    // so the whole world stays time-consistent and fast-forward is one uniform multiplier.
+    private bool _shotAnimating;
+    private double _shotSimTime, _shotFlightTime;
+    private static double _playRate = 4.0;                       // persists across missions
+    private static readonly double[] PlayRates = { 1, 1.5, 2, 4, 10, 15 };
+    private Button _speedBtn = null!;
+
     protected int ShotNo = 0;
 
     private Dictionary<PlottingBoard.Tool, Button> _toolButtons = new();
@@ -38,20 +47,64 @@ public abstract partial class StationView : Control
 
     public override void _Process(double delta)
     {
-        if (_cooldownLeft <= 0) return;
-        _cooldownLeft -= delta;
-        double frac = _cooldownTotal <= 0 ? 1 : 1 - _cooldownLeft / _cooldownTotal;
-        if (_reloadBar != null) _reloadBar.Value = System.Math.Clamp(frac * 100, 0, 100);
-        if (_cooldownLeft <= 0)
+        // Shot fly-out advances on the ONE physical sim clock: real seconds × the global
+        // play-rate (fast-forward). The board and the vertical plane are pure functions of
+        // this clock, so speeding it speeds the whole shot uniformly — never one view, fuse
+        // or mover differently than another.
+        if (_shotAnimating)
         {
-            _cooldownLeft = 0;
-            if (_reloadBar != null) _reloadBar.Value = 100;
-            if (FireButton != null) { FireButton.Disabled = false; FireButton.Text = "◆  COMMIT & FIRE"; }
+            _shotSimTime += delta * _playRate;   // TimeScale = 1 sim-sec per real-sec at 1×
+            float frac = _shotFlightTime > 1e-9 ? (float)(_shotSimTime / _shotFlightTime) : 1f;
+            if (frac >= 1f) { frac = 1f; _shotAnimating = false; }
+            Board.SetAnimProgress(frac);
+            VPlane.SetAnimProgress(frac);
         }
-        else if (FireButton != null)
+
+        // Reload cooldown is paced for the PLAYER, not the physics — so it runs at real time
+        // (never scaled by the play-rate) and is independent of the fly-out clock.
+        if (_cooldownLeft > 0)
         {
-            FireButton.Text = $"◆  RELOADING…  {System.Math.Ceiling(_cooldownLeft)}s";
+            _cooldownLeft -= delta;
+            double frac = _cooldownTotal <= 0 ? 1 : 1 - _cooldownLeft / _cooldownTotal;
+            if (_reloadBar != null) _reloadBar.Value = System.Math.Clamp(frac * 100, 0, 100);
+            if (_cooldownLeft <= 0)
+            {
+                _cooldownLeft = 0;
+                if (_reloadBar != null) _reloadBar.Value = 100;
+                if (FireButton != null) { FireButton.Disabled = false; FireButton.Text = "◆  COMMIT & FIRE"; }
+            }
+            else if (FireButton != null)
+            {
+                FireButton.Text = $"◆  RELOADING…  {System.Math.Ceiling(_cooldownLeft)}s";
+            }
         }
+    }
+
+    /// <summary>
+    /// Begin the post-fire fly-out, played over the round's REAL flight time (scaled only by
+    /// the global play-rate). Drives the board and the vertical plane from one clock, so the
+    /// on-screen travel actually takes the physical time of flight — the foundation the timed
+    /// warhead and moving targets stand on.
+    /// </summary>
+    protected void BeginShotAnimation(double flightTimeSeconds)
+    {
+        _shotFlightTime = System.Math.Max(flightTimeSeconds, 1e-6);
+        _shotSimTime = 0;
+        _shotAnimating = true;
+        Board.BeginImpactAnim();
+        VPlane.BeginArcAnim();
+    }
+
+    private static string FormatRate(double r) => (r % 1 == 0 ? r.ToString("0") : r.ToString("0.0")) + "×";
+    private static string SpeedLabel() => "⏩ " + FormatRate(_playRate);
+
+    /// <summary>Cycle the fly-out playback speed (1× → 1.5× → 2× → 4× → 10× → 15× → 1×). May
+    /// be changed mid-flight: the next frame simply advances the one clock at the new rate.</summary>
+    private void CycleSpeed()
+    {
+        int idx = System.Array.IndexOf(PlayRates, _playRate);
+        _playRate = PlayRates[(idx + 1) % PlayRates.Length];
+        if (_speedBtn != null) _speedBtn.Text = SpeedLabel();
     }
 
     /// <summary>Overridden by stations to advance their seed before a NEW MISSION rebuild.</summary>
@@ -221,6 +274,13 @@ public abstract partial class StationView : Control
         var zout = Ui.FlatButton(P, "−", P.Text, P.Border, 13);
         var zr = Ui.FlatButton(P, "⌖", P.TextDim, P.Border, 11);
         hb.AddChild(zin); hb.AddChild(zout); hb.AddChild(zr);
+
+        // Fly-out playback speed — fast-forward the shot animation (a uniform multiplier on
+        // the one sim clock; never touches the physics result). Cyclable, even mid-flight.
+        _speedBtn = Ui.FlatButton(P, SpeedLabel(), P.TextDim, P.Border, 10);
+        _speedBtn.TooltipText = "Fly-out playback speed (1× → 15×) — scales the whole shot uniformly, never the outcome";
+        _speedBtn.Pressed += CycleSpeed;
+        hb.AddChild(_speedBtn);
         header.AddChild(hb);
         v.AddChild(header);
 

@@ -35,6 +35,11 @@ public partial class PlottingBoard : Control
     // is theirs to measure or compute from the coordinates.
     public Vector2 GunOriginM = Vector2.Zero;
 
+    // Display units for the grid/coordinates/scale: metres-per-unit and a label. Kinetic
+    // works in km (1000 m); the long-range beam battlespace works in light-seconds.
+    public double UnitMeters = 1000.0;
+    public string UnitLabel = "km";
+
     // Zoom envelope — generous so the player can pull right in on a marker to plot by hand.
     private const float ZoomMin = 0.35f, ZoomMax = 24f;
 
@@ -116,7 +121,8 @@ public partial class PlottingBoard : Control
         return AbsMetres(new Vector2((float)rangeM * Mathf.Sin(br), (float)rangeM * Mathf.Cos(br)));
     }
 
-    private static string Coord(Vector2 absM) => $"E {absM.X / 1000:0.00} · N {absM.Y / 1000:0.00} km";
+    private string Coord(Vector2 absM)
+        => $"E {absM.X / UnitMeters:0.00} · N {absM.Y / UnitMeters:0.00} {UnitLabel}";
 
     // ----- tool control (called by the station's board toolbar) -------------
 
@@ -302,14 +308,15 @@ public partial class PlottingBoard : Control
 
     // ----- impact animation -------------------------------------------------
 
-    /// <summary>Start the post-fire fly-out: the round travels from the gun to the impact.</summary>
-    public void BeginImpactAnim() { _impactAnim = 0f; _animating = true; SetProcess(true); QueueRedraw(); }
+    /// <summary>Arm the post-fire fly-out; the station's single sim clock drives the progress.</summary>
+    public void BeginImpactAnim() { _impactAnim = 0f; _animating = true; QueueRedraw(); }
 
-    public override void _Process(double delta)
+    /// <summary>Set fly-out progress (0..1). Called each frame by the station's one clock, so
+    /// the on-screen travel takes the round's real (time-scaled) flight time.</summary>
+    public void SetAnimProgress(float p)
     {
-        if (!_animating) { SetProcess(false); return; }
-        _impactAnim += (float)delta / 0.55f;   // ~0.55 s flight
-        if (_impactAnim >= 1f) { _impactAnim = 1f; _animating = false; }
+        _impactAnim = Mathf.Clamp(p, 0f, 1f);
+        _animating = _impactAnim < 1f;
         QueueRedraw();
     }
 
@@ -329,7 +336,7 @@ public partial class PlottingBoard : Control
         {
             float r = (float)(i * RingStepM) * K;
             DrawArc(gunC, r, 0, Mathf.Tau, 96, P.Border, 1.0f, true);
-            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / 1000).ToString("0") + "km",
+            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / UnitMeters).ToString("0.##") + UnitLabel,
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
@@ -412,7 +419,7 @@ public partial class PlottingBoard : Control
         Vector2 sb = new(28, Size.Y - 22);
         DrawLine(sb, sb + new Vector2(barPx, 0), P.Faint, 1.5f);
         DrawString(font, sb + new Vector2(0, -6), "0", HorizontalAlignment.Left, -1, 8, P.Faint);
-        DrawString(font, sb + new Vector2(barPx - 14, -6), $"{RingStepM / 1000:0}km",
+        DrawString(font, sb + new Vector2(barPx - 18, -6), $"{RingStepM / UnitMeters:0.##}{UnitLabel}",
             HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Active-tool hint + live cursor readout.
@@ -453,8 +460,8 @@ public partial class PlottingBoard : Control
             if (x >= 0 && x <= Size.X)
             {
                 DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), P.BorderSoft, 1);
-                // Absolute battlespace easting at this line (km).
-                DrawString(font, new Vector2(x + 2, axisY - 3), $"{(GunOriginM.X + i * RingStepM) / 1000:0}",
+                // Absolute battlespace easting at this line (display units).
+                DrawString(font, new Vector2(x + 2, axisY - 3), $"{(GunOriginM.X + i * RingStepM) / UnitMeters:0.##}",
                     HorizontalAlignment.Left, -1, 7, P.Faint);
             }
             float y = gunC.Y + i * step;
@@ -462,7 +469,7 @@ public partial class PlottingBoard : Control
             {
                 DrawLine(new Vector2(0, y), new Vector2(Size.X, y), P.BorderSoft, 1);
                 // Absolute battlespace northing (screen-down is south, so subtract).
-                DrawString(font, new Vector2(axisX, y - 3), $"{(GunOriginM.Y - i * RingStepM) / 1000:0}",
+                DrawString(font, new Vector2(axisX, y - 3), $"{(GunOriginM.Y - i * RingStepM) / UnitMeters:0.##}",
                     HorizontalAlignment.Left, -1, 7, P.Faint);
             }
         }

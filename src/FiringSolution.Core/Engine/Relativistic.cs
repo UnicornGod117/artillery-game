@@ -39,6 +39,27 @@ public static class Relativistic
     public static double PulseEnergy(BeamWeapon weapon, double beta)
         => weapon.ParticleCount * ParticleKineticEnergy(weapon.RestEnergyJoules, beta);
 
+    /// <summary>Proper time on a body's own clock over a lab flight time: τ = t/γ.</summary>
+    public static double ProperTime(double labTime, double beta) => labTime / Lorentz(beta);
+
+    /// <summary>
+    /// Lab-frame distance a warhead covers before its onboard fuse (proper time
+    /// <paramref name="fuseProperTime"/>) fires. The moving fuse runs slow, so in our frame
+    /// it takes t = γ·τ to fire, by which point the warhead has flown d = βc·t = βγ·c·τ.
+    /// </summary>
+    public static double DetonationDistance(double beta, double fuseProperTime)
+        => beta * Lorentz(beta) * Constants.C * fuseProperTime;
+
+    /// <summary>
+    /// Solve the launch speed β whose time-dilated fuse detonates exactly at slant range R.
+    /// From d = βγ·c·τ = R: let k = R/(c·τ) = βγ, then β = k/√(1 + k²) (and γ = √(1 + k²)).
+    /// </summary>
+    public static double SpeedForFuseRange(double slantRange, double fuseProperTime)
+    {
+        double k = slantRange / (Constants.C * fuseProperTime);
+        return k / Math.Sqrt(1.0 + k * k);
+    }
+
     /// <summary>
     /// Simulate a beam shot as a straight ray at βc; reports flight time but lead is
     /// negligible over engagement ranges. The player commits the beam SPEED β (v/c);

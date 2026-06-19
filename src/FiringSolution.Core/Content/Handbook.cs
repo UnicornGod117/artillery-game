@@ -40,10 +40,12 @@ public static class Handbook
         new HandbookSection("Special relativity (beam)", new[]
         {
             new HandbookEntry("Lorentz factor", "γ = 1 / √(1 − β²),  β = v/c"),
+            new HandbookEntry("Time dilation", "Δt = γ·Δτ  (a moving clock runs slow)"),
+            new HandbookEntry("Proper-time fuse", "fuse fires at τ (its clock) = γ·τ (ours)"),
+            new HandbookEntry("Detonation range", "d = β·γ·c·τ"),
+            new HandbookEntry("Speed for a range", "k = R/(c·τ),  β = k/√(1 + k²)"),
             new HandbookEntry("Relativistic KE", "E_k = (γ − 1)·m₀·c²"),
             new HandbookEntry("Pulse energy (N particles)", "E = N·(γ − 1)·m₀·c²"),
-            new HandbookEntry("Speed for an energy", "γ = 1 + E/(N·m₀c²),  β = √(1 − 1/γ²)"),
-            new HandbookEntry("Relativistic momentum", "p = γ·m₀·v"),
         }),
         new HandbookSection("Vectors", new[]
         {
@@ -60,7 +62,7 @@ public static class Handbook
         "medium1" => "Full SUVAT both axes; account for g(h) and target altitude. Energy via ½mv².",
         "medium2" => "Decompose crosswind into along/cross components; lead by flight time.",
         "hard" => "Drag is non-analytic — integrate numerically. ρ(h) feeds drag and couples to g(h).",
-        "beam" => "Lead ≈ 0 (near-c). Work bearing/elevation from the coordinates, then solve the SPEED: γ = 1 + E/(N·m₀c²), β = √(1 − 1/γ²). The energy is a WINDOW — land inside it, don't overshoot.",
+        "beam" => "Lead ≈ 0. Work bearing/elevation & range R from the coordinates. The warhead's fuse fires after τ on its OWN clock; dilation stretches that to γτ, so it detonates at d = βγcτ. Solve the speed to land d on the target: k = R/(c·τ) (= R in light-seconds ÷ τ), β = k/√(1 + k²). Too fast overshoots.",
         _ => "Read the board. Every instrument gives measurements, never solutions.",
     };
 }

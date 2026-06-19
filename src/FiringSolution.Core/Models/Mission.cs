@@ -22,20 +22,20 @@ public sealed record KineticObserved(
     double AirTemp, double AirDensity, double LocalG);
 
 /// <summary>
-/// True beam target. The kill needs the protons to arrive inside an energy WINDOW
-/// (RequiredPulseEnergy ± EnergyTolerance): too weak and they don't penetrate, too
-/// hot and they over-penetrate without depositing. The player sets the beam SPEED
-/// (β); the delivered energy is N·(γ−1)·m₀c², so there is exactly one band of β that
-/// works — "max it out and win" fails by overshooting the window.
+/// True beam target — a long-range proper-time WARHEAD intercept. The warhead carries a
+/// fixed fuse that fires after <see cref="FuseProperTime"/> seconds on its OWN clock; time
+/// dilation stretches that to γ·τ in our frame, so it detonates at d = βγ·c·τ. The player
+/// picks the launch SPEED β so the dilated fuse detonates within
+/// <see cref="DetonationToleranceMeters"/> of the target's slant range — too slow detonates
+/// short, too fast (e.g. β maxed) overshoots, so there is exactly one band of β that works.
 /// </summary>
 public sealed record BeamTarget(
     double SlantRange, double Bearing, double LosElevation,
-    double RequiredPulseEnergyJoules, double EnergyToleranceJoules);
+    double FuseProperTime, double DetonationToleranceMeters);
 
 public sealed record BeamObserved(
     double SlantRange, double Bearing, double LosElevation,
-    double Closing, double AirTemp, double AirDensity, double LocalG,
-    double RequiredEnergyGJ, double ToleranceGJ);
+    double Closing, double FuseSeconds, double DetonationToleranceMeters);
 
 /// <summary>A fully-specified mission produced by the generator.</summary>
 public sealed record Mission(

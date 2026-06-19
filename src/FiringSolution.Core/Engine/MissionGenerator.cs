@@ -101,45 +101,42 @@ public static class MissionGenerator
         World world = s.Circumstance > 0.5 ? Worlds.Kepler9c : Worlds.Earth;
         var weapon = Munitions.ProtonFocused();
 
-        double slantRange = Math.Round(rng.Lerp(18000, 46000));
         double bearing = Math.Round(rng.Lerp(0, 360) * 10) / 10;
         double losElevation = Math.Round(rng.Lerp(4, 18) * 10) / 10;
 
-        // The kill needs the protons to arrive inside an ENERGY WINDOW. We pick the β the
-        // kill is tuned to (well-conditioned 0.90–0.965 band so dialling β to 0.01 %c is
-        // plenty precise), then DERIVE the required pulse energy from it. The player runs
-        // that inversion the other way: γ = 1 + E/(N·m₀c²), β = √(1 − 1/γ²). The required
-        // energy is a published figure, so snap the TRUTH to the displayed 0.01 GJ grid —
-        // a player who solves the shown value lands dead-centre in the window, never trapped.
-        double betaSol = 0.90 + 0.065 * rng.Next();
-        double requiredGJ = Math.Round(Relativistic.PulseEnergy(weapon, betaSol) / 1e9 * 100) / 100;
-        double requiredJ = requiredGJ * 1e9;
-        // Tighter window at higher circumstance; floored so the band is always achievable.
-        double toleranceGJ = Math.Max(0.08, Math.Round((0.045 - 0.015 * s.Circumstance) * requiredGJ * 100) / 100);
-        double toleranceJ = toleranceGJ * 1e9;
+        // Long-range proper-time WARHEAD intercept. We pick the launch speed the kill is
+        // tuned to (β in 0.85–0.98) and a fuse time τ (seconds, on the warhead's own clock),
+        // then DERIVE the slant range the dilated fuse detonates at: R = β·γ·c·τ. At these
+        // speeds the flight time is γ·τ (seconds → minutes) — long enough to simulate and
+        // animate, and the regime where time dilation is the whole puzzle. The player runs
+        // the inversion: k = R/(c·τ), β = k/√(1 + k²). (Tip: R in light-seconds ÷ τ = k.)
+        double betaSol = 0.85 + 0.13 * rng.Next();
+        double fuse = Math.Round(rng.Lerp(6, 30));            // s, integer for clean arithmetic
+        double gammaSol = Relativistic.Lorentz(betaSol);
+        double slantRange = betaSol * gammaSol * Constants.C * fuse;   // R = βγcτ (exact truth)
+        // Detonation window: a fraction of R, tightening with circumstance, floored so the
+        // band is always achievable from a β dialled to 0.001 %c.
+        double detTol = Math.Max(5e6, (0.008 - 0.004 * s.Circumstance) * slantRange);
 
-        var target = new BeamTarget(slantRange, bearing, losElevation, requiredJ, toleranceJ);
+        var target = new BeamTarget(slantRange, bearing, losElevation, fuse, detTol);
 
-        // The target is handed over as a precise COORDINATE (no calibration/spotter loop
-        // exists for the beam to correct against), so the observed geometry is the truth —
-        // pointing is solvable to well within the on-axis tolerance once the player works
-        // bearing/elevation out of the coordinate. The energy WINDOW is the precision gate.
+        // The target is handed over as a precise COORDINATE (no spotter loop exists for the
+        // beam), so the observed geometry IS the truth — pointing and the range R fall out
+        // of the coordinate to well within tolerance. The dilation solve is the gate.
         var observed = new BeamObserved(
             SlantRange: slantRange,
             Bearing: bearing,
             LosElevation: losElevation,
-            Closing: Math.Round(rng.Lerp(120, 480)),
-            AirTemp: Math.Round(rng.Lerp(-60, -10)),
-            AirDensity: Math.Round(Atmosphere.DensityAt(world, 12000) * 1000) / 1000,
-            LocalG: Math.Round(Atmosphere.SurfaceGravity(world, 12000) * 100) / 100,
-            RequiredEnergyGJ: requiredGJ,
-            ToleranceGJ: toleranceGJ);
+            Closing: Math.Round(rng.Lerp(2000, 12000)),       // m/s, intercept closing (flavour)
+            FuseSeconds: fuse,
+            DetonationToleranceMeters: detTol);
 
-        // Ground emitter on the battlespace grid (NOT at the origin); drawn last so the
-        // sequence above stays deterministic. Offset ≥ max slant range → positive quadrant.
+        // Emitter on the battlespace grid (NOT at the origin); drawn last so the sequence
+        // above stays deterministic. Offset ≥ max possible R → target coordinate stays in
+        // the positive quadrant. (max R ≈ 0.98·γ(0.98)·c·30 ≈ 4.4e10 m.)
         var gunOrigin = new Vec3(
-            Math.Round(46000 + rng.Lerp(0, 8000)),
-            Math.Round(46000 + rng.Lerp(0, 8000)),
+            Math.Round(5e10 + rng.Lerp(0, 1e10)),
+            Math.Round(5e10 + rng.Lerp(0, 1e10)),
             0);
 
         return new Mission(

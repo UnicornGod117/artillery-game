@@ -60,13 +60,13 @@ public static class GameEngine
         var shot = Relativistic.SimulateBeam(mission.BeamWeapon, t.SlantRange, azimuth, elevation, beta);
         var score = Scoring.ScoreBeam(
             shot, azimuth, elevation, t.Bearing, t.LosElevation, t.SlantRange,
-            t.RequiredPulseEnergyJoules, t.EnergyToleranceJoules, mission.AngularTolerance);
+            t.FuseProperTime, t.DetonationToleranceMeters, mission.AngularTolerance);
         return new BeamResult(shot, score);
     }
 
     /// <summary>
-    /// The beam "give up" escape hatch: solve the relativistic KE equation for the β that
-    /// lands the pulse at the centre of the kill window. γ = 1 + E_req/(N·m₀c²), β = √(1−1/γ²).
+    /// The beam "give up" escape hatch: solve the launch speed whose time-dilated fuse
+    /// detonates exactly on the target. k = R/(c·τ), β = k/√(1 + k²).
     /// </summary>
     public static double RevealBeamBeta(Mission mission)
     {
@@ -74,9 +74,8 @@ public static class GameEngine
             mission.BeamWeapon is null || mission.BeamTarget is null)
             throw new InvalidOperationException("Mission is not a beam mission.");
 
-        var w = mission.BeamWeapon;
-        double gamma = 1.0 + mission.BeamTarget.RequiredPulseEnergyJoules / (w.ParticleCount * w.RestEnergyJoules);
-        return Relativistic.BetaFromGamma(gamma);
+        return Relativistic.SpeedForFuseRange(
+            mission.BeamTarget.SlantRange, mission.BeamTarget.FuseProperTime);
     }
 
     /// <summary>
