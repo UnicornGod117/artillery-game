@@ -81,7 +81,7 @@ public partial class BeamStation : StationView
         v.AddChild(Ui.SectionHeader(P, "Track", P.Accent, "MEASURED"));
         v.AddChild(MetricGrid(new[]
         {
-            ("CLOSING VELOCITY", $"{o.Closing / 1000:0.0} km/s"),
+            ("CLOSING VELOCITY", $"{o.Closing / 1000:0.00} km/s"),
             ("WARHEAD FUSE τ", $"{o.FuseSeconds:0} s"),
         }, P.Text));
 
@@ -89,9 +89,9 @@ public partial class BeamStation : StationView
         v.AddChild(Ui.SectionHeader(P, "Your Position — Emitter", P.Accent, "GRID · ls"));
         v.AddChild(MetricGrid(new[]
         {
-            ("EASTING · ls", $"{g.X / Ls:0.00}"),
-            ("NORTHING · ls", $"{g.Y / Ls:0.00}"),
-            ("ALTITUDE · ls", $"{g.Z / Ls:0.00}"),
+            ("EASTING · ls", $"{g.X / Ls:0.000}"),
+            ("NORTHING · ls", $"{g.Y / Ls:0.000}"),
+            ("ALTITUDE · ls", $"{g.Z / Ls:0.000}"),
         }, new Color("aebecb"), 14));
 
         // Target — a COORDINATE, not a bearing/range/elevation. Work the geometry yourself:
@@ -99,9 +99,9 @@ public partial class BeamStation : StationView
         v.AddChild(Ui.SectionHeader(P, "Target — Observed", P.Red, "SENSOR · ls"));
         v.AddChild(MetricGrid(new[]
         {
-            ("EASTING · ls", $"{tgt.X / Ls:0.00}"),
-            ("NORTHING · ls", $"{tgt.Y / Ls:0.00}"),
-            ("ALTITUDE · ls", $"{tgt.Z / Ls:0.00}"),
+            ("EASTING · ls", $"{tgt.X / Ls:0.000}"),
+            ("NORTHING · ls", $"{tgt.Y / Ls:0.000}"),
+            ("ALTITUDE · ls", $"{tgt.Z / Ls:0.000}"),
             ("MOTION", "TRACKING"),
         }, new Color("e9dcdc")));
         v.AddChild(Ui.Text("↳ Lead ≈ 0. Derive bearing, elevation & the slant range R from the coordinates.", P.Faint, 9));
@@ -141,15 +141,15 @@ public partial class BeamStation : StationView
         grid.AddThemeConstantOverride("v_separation", 11);
         v.AddChild(grid);
 
-        AddNumberField(grid, "AZIMUTH (x) · ° · ±0.1°", _az.ToString("0.0"), 0.1,
-            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); });
-        AddNumberField(grid, "ELEVATION (y) · ° · ±0.1°", _el.ToString("0.0"), 0.1,
-            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); });
-        AddNumberField(grid, "Z-CORR (cross) · ° · ±0.1°", _zc.ToString("+0.0;-0.0;0.0"), 0.1,
-            d => { _zc = d; });
-        AddNumberField(grid, "LAUNCH SPEED · % c · ±0.001", _beta.ToString("0.000"), 0.01,
+        AddNumberField(grid, "AZIMUTH (x) · ° · ±0.01°", _az.ToString("0.00"), 0.1,
+            d => { _az = d; Board.AimAzimuth = _az; Board.QueueRedraw(); }, format: "0.00");
+        AddNumberField(grid, "ELEVATION (y) · ° · ±0.01°", _el.ToString("0.00"), 0.1,
+            d => { _el = d; VPlane.AimElevation = _el; VPlane.QueueRedraw(); }, format: "0.00");
+        AddNumberField(grid, "Z-CORR (cross) · ° · ±0.01°", _zc.ToString("+0.00;-0.00;0.00"), 0.1,
+            d => { _zc = d; }, format: "+0.00;-0.00;0.00");
+        AddNumberField(grid, "LAUNCH SPEED · % c · ±0.0001", _beta.ToString("0.0000"), 0.01,
             d => { _beta = d; RefreshRegime(); },
-            clamp: d => Math.Clamp(d, 0, 99.999), format: "0.000");
+            clamp: d => Math.Clamp(d, 0, 99.9999), format: "0.0000");
 
         var fire = Ui.PrimaryButton(P, "◆  COMMIT & FIRE");
         fire.Pressed += Fire;
@@ -166,12 +166,12 @@ public partial class BeamStation : StationView
         rv.AddChild(MetricGrid(new[]
         {
             ("FUSE τ · s", $"{o.FuseSeconds:0}"),
-            ("DET. WINDOW · ± ls", $"{o.DetonationToleranceMeters / Ls:0.00}"),
+            ("DET. WINDOW · ± ls", $"{o.DetonationToleranceMeters / Ls:0.000}"),
         }, P.Text, 14));
         var betaRow = new HBoxContainer();
         betaRow.AddChild(Ui.Text("LAUNCH SPEED (set)", P.Faint, 9));
         betaRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        _betaLabel = Ui.Text($"{_beta:0.000} % c", P.Accent, 14);
+        _betaLabel = Ui.Text($"{_beta:0.0000} % c", P.Accent, 14);
         betaRow.AddChild(_betaLabel);
         rv.AddChild(betaRow);
         reg.AddChild(rv);
@@ -247,7 +247,7 @@ public partial class BeamStation : StationView
 
     private void RefreshRegime()
     {
-        _betaLabel.Text = $"{_beta:0.000} % c";
+        _betaLabel.Text = $"{_beta:0.0000} % c";
     }
 
     private void Fire()
@@ -287,8 +287,8 @@ public partial class BeamStation : StationView
             new[]
             {
                 ("SHOT NO.", ShotNo.ToString("00"), P.Text),
-                ("ANG. ERROR", $"{r.Score.AngError:0.00}°", P.Text),
-                ("DET. RANGE ERR", $"{errLs:+0.00;-0.00} ls", acc),
+                ("ANG. ERROR", $"{r.Score.AngError:0.000}°", P.Text),
+                ("DET. RANGE ERR", $"{errLs:+0.000;-0.000} ls", acc),
                 ("FLIGHT TIME", $"{tDet:0.0} s", P.Text),
             },
             r.Score.Hit ? "warhead detonated on target."
@@ -304,9 +304,9 @@ public partial class BeamStation : StationView
         SetLastShot("GIVE UP — SOLUTION", P.AccentDim,
             new[]
             {
-                ("AZIMUTH", $"{t.Bearing:0.0}°", P.Text),
-                ("ELEVATION", $"{t.LosElevation:0.0}°", P.Text),
-                ("LAUNCH SPEED", $"{beta:0.000} % c", P.Text),
+                ("AZIMUTH", $"{t.Bearing:0.00}°", P.Text),
+                ("ELEVATION", $"{t.LosElevation:0.00}°", P.Text),
+                ("LAUNCH SPEED", $"{beta:0.0000} % c", P.Text),
             },
             "one valid firing solution shown.");
     }

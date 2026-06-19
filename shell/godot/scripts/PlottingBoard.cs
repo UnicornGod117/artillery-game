@@ -122,7 +122,7 @@ public partial class PlottingBoard : Control
     }
 
     private string Coord(Vector2 absM)
-        => $"E {absM.X / UnitMeters:0.00} · N {absM.Y / UnitMeters:0.00} {UnitLabel}";
+        => $"E {absM.X / UnitMeters:0.000} · N {absM.Y / UnitMeters:0.000} {UnitLabel}";
 
     // ----- tool control (called by the station's board toolbar) -------------
 
@@ -336,7 +336,7 @@ public partial class PlottingBoard : Control
         {
             float r = (float)(i * RingStepM) * K;
             DrawArc(gunC, r, 0, Mathf.Tau, 96, P.Border, 1.0f, true);
-            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / UnitMeters).ToString("0.##") + UnitLabel,
+            DrawString(font, gunC + new Vector2(r + 3, -2), (i * RingStepM / UnitMeters).ToString("0.###") + UnitLabel,
                 HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
@@ -362,7 +362,7 @@ public partial class PlottingBoard : Control
         Vector2 aimDir = new(Mathf.Sin(abr), -Mathf.Cos(abr));
         Vector2 aimEnd = gunC + aimDir * headingPx;
         DrawDashed(gunC, aimEnd, P.Accent, 1.4f, 6, 4);
-        DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.0}°",
+        DrawString(font, aimEnd + aimDir * 6 + new Vector2(-12, -6), $"BRG {AimAzimuth:0.00}°",
             HorizontalAlignment.Left, -1, 8, P.Accent);
 
         // Spotter / observation post.
@@ -419,7 +419,7 @@ public partial class PlottingBoard : Control
         Vector2 sb = new(28, Size.Y - 22);
         DrawLine(sb, sb + new Vector2(barPx, 0), P.Faint, 1.5f);
         DrawString(font, sb + new Vector2(0, -6), "0", HorizontalAlignment.Left, -1, 8, P.Faint);
-        DrawString(font, sb + new Vector2(barPx - 18, -6), $"{RingStepM / UnitMeters:0.##}{UnitLabel}",
+        DrawString(font, sb + new Vector2(barPx - 18, -6), $"{RingStepM / UnitMeters:0.###}{UnitLabel}",
             HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Active-tool hint + live cursor readout.
@@ -461,7 +461,7 @@ public partial class PlottingBoard : Control
             {
                 DrawLine(new Vector2(x, 0), new Vector2(x, Size.Y), P.BorderSoft, 1);
                 // Absolute battlespace easting at this line (display units).
-                DrawString(font, new Vector2(x + 2, axisY - 3), $"{(GunOriginM.X + i * RingStepM) / UnitMeters:0.##}",
+                DrawString(font, new Vector2(x + 2, axisY - 3), $"{(GunOriginM.X + i * RingStepM) / UnitMeters:0.###}",
                     HorizontalAlignment.Left, -1, 7, P.Faint);
             }
             float y = gunC.Y + i * step;
@@ -469,7 +469,7 @@ public partial class PlottingBoard : Control
             {
                 DrawLine(new Vector2(0, y), new Vector2(Size.X, y), P.BorderSoft, 1);
                 // Absolute battlespace northing (screen-down is south, so subtract).
-                DrawString(font, new Vector2(axisX, y - 3), $"{(GunOriginM.Y - i * RingStepM) / UnitMeters:0.##}",
+                DrawString(font, new Vector2(axisX, y - 3), $"{(GunOriginM.Y - i * RingStepM) / UnitMeters:0.###}",
                     HorizontalAlignment.Left, -1, 7, P.Faint);
             }
         }
