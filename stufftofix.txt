@@ -1,0 +1,10 @@
+1. unable to change difficulties
+2. unable to delete stuff drawn on
+3. grid/map is unintuative and slightly too minimalist
+4. showing more information than is necessary for difficulty (why am i seeing air desnity for medium difficulty)
+unable to change the weopon
+5. add a little animation of the shell going + cooldown between each shot.
+6. when a miss is considered a "calibration shot" it shouldnt just immidiatley give all facts about the other one, just say how its off and stuff, ideally later a spotter will tell you where they see it relative to them, and the angle they saw it away from the target, and how far it was from them.
+7. be able to move around pop up windows
+8. dont have the cannon/gun immidiately have the right direction to the target, takes away half the game.
+9. for the reletavistic beam it shows "reletavistic regime" stats and tells us way more than it should, like what we're solving for.
