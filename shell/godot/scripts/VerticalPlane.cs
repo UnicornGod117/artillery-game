@@ -84,13 +84,13 @@ public partial class VerticalPlane : Control
             float x = left + plotW * (i / 4f);
             DrawLine(new Vector2(x, top + 6), new Vector2(x, bottom), P.BorderSoft, 1);
             DrawString(font, new Vector2(x - 8, bottom + 12),
-                $"{_maxRange * (i / 4f) / UnitMeters:0.##}", HorizontalAlignment.Left, -1, 8, P.Faint);
+                $"{_maxRange * (i / 4f) / UnitMeters:0.###}", HorizontalAlignment.Left, -1, 8, P.Faint);
         }
 
         // Altitude ticks: gun level (0), the top, and the floor if it is below the gun.
-        DrawString(font, new Vector2(6, top + 4), $"+{_maxAlt / UnitMeters:0.##}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
+        DrawString(font, new Vector2(6, top + 4), $"+{_maxAlt / UnitMeters:0.###}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
         if (_minAlt < 0)
-            DrawString(font, new Vector2(6, bottom - 12), $"{_minAlt / UnitMeters:0.##}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
+            DrawString(font, new Vector2(6, bottom - 12), $"{_minAlt / UnitMeters:0.###}{UnitLabel}", HorizontalAlignment.Left, -1, 8, P.Faint);
 
         // Gun-level (horizon) reference line at 0 m — what the target altitude is measured against.
         DrawDashed(new Vector2(left, gunY), new Vector2(left + plotW, gunY), P.BorderSoft, 1f, 6, 5);
