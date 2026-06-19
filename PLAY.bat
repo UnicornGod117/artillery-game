@@ -7,6 +7,16 @@ set GODOT_EXE=%USERPROFILE%\Godot\4.3-mono\Godot_v4.3-stable_mono_win64\Godot_v4
 set PROJECT_DIR=%~dp0shell\godot
 set CSPROJ=%PROJECT_DIR%\FiringSolution.Shell.csproj
 
+:: ── Pull latest code ─────────────────────────────────────────────────────────
+echo.
+echo  Checking for updates...
+git -C "%~dp0" pull
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo  WARNING: Could not pull latest updates. Playing current version.
+    echo.
+)
+
 :: ── Preflight checks ─────────────────────────────────────────────────────────
 if not exist "%GODOT_EXE%" (
     echo.
