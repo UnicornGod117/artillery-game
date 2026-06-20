@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 using Godot;
 using System;
 using System.Collections.Generic;

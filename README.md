@@ -1,5 +1,7 @@
 # FIRING SOLUTION
 
+> Created by **Unicorn God** — released under the [MIT License](LICENSE).
+
 A single-seat fire-control simulator in which the player performs the actual
 physics to produce artillery and directed-energy firing solutions. *You do the
 math; the world is the answer key.*

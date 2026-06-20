@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 namespace FiringSolution.Core.Models;
 
 /// <summary>A world/planet: mass &amp; radius (give g) and an exponential atmosphere.</summary>

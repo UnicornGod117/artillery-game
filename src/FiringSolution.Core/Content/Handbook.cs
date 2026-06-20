@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 namespace FiringSolution.Core.Content;
 
 public sealed record HandbookEntry(string Name, string Formula);

@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 namespace FiringSolution.Core.Models;
 
 /// <summary>The four independent difficulty sliders (design §6).</summary>
