@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 using FiringSolution.Core.Content;
 using FiringSolution.Core.Models;
 

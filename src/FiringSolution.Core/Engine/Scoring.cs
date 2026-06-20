@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Unicorn God. Licensed under the MIT License.
 namespace FiringSolution.Core.Engine;
 
 /// <summary>How a kinetic shot landed relative to the true target.</summary>
