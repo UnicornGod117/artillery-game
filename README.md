@@ -28,8 +28,9 @@ range/line corrections. **Tab** switches between the two stations.
 See [`firing-solution-design-doc.md`](firing-solution-design-doc.md) for the full
 design and [`Firing Solution - Vision.dc.html`](Firing%20Solution%20-%20Vision.dc.html)
 for the interactive visual study (two station "directions": amber kinetic and
-ice-blue relativistic beam). Planned expansions — including the **timed beam intercept**
-relativistic time-of-flight puzzle — are tracked in [`docs/roadmap.md`](docs/roadmap.md).
+ice-blue relativistic beam). The **timed beam intercept** relativistic time-of-flight
+puzzle has shipped; the remaining roadmap — headlined by **moving targets** — is tracked
+in [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Architecture
 
@@ -143,12 +144,18 @@ shell/godot/
 
 ## Build status / verification
 
-**Verified** under the .NET 8 SDK:
+**Verified** under the .NET 8 SDK — and now enforced on every push / PR by the
+[CI workflow](.github/workflows/ci.yml) (`dotnet build -warnaserror` + `dotnet test`):
 
 ```bash
 dotnet build           # Core + tests build clean (0 warnings)
-dotnet test            # 38 Core unit tests pass
+dotnet test            # physics, scoring, mission-determinism + calculator suites pass
 ```
+
+The shell's scientific calculator is pure C# (it deliberately holds no physics), so it is
+**linked into the test project and unit-tested headlessly** — the recursive-descent
+evaluator that does the player's arithmetic is now pinned for precedence, degree-mode trig,
+domain errors and the recursion guard.
 
 The Godot shell (`shell/godot`) also **compiles clean** against `Godot.NET.Sdk`
 and the Core (`dotnet build` inside `shell/godot/`). Actually *running* the shell

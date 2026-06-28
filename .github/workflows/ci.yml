@@ -1,0 +1,35 @@
+name: CI
+
+# The Core is the answer key: every score in the game is measured against the
+# trajectory it integrates, so a silent regression here corrupts the game
+# invisibly. This workflow builds the Core + tests and runs the unit suite on
+# every push and pull request, making "Verified under the .NET 8 SDK" a fact the
+# repository proves rather than a claim in the README.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & test (Core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore FiringSolution.sln
+
+      # Warnings-as-errors keeps the "0 warnings" promise honest in CI.
+      - name: Build
+        run: dotnet build FiringSolution.sln --configuration Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test FiringSolution.sln --configuration Release --no-build --verbosity normal
