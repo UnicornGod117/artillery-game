@@ -16,6 +16,9 @@ It will download and install Godot 4.3 .NET edition and check for the .NET 8 SDK
 It builds the latest code and launches the game. After any `git pull` it always
 rebuilds from scratch, so you are never running a stale cached version.
 
+**On Linux / macOS**, use `./play.sh` instead (same force-rebuild + launch). Point the
+`GODOT` environment variable at your Godot 4.3 .NET editor, or have `godot` on your `PATH`.
+
 Once in the game: **Commit & Fire** simulates exactly the azimuth / elevation /
 charge you entered; the impact is stamped on the board, and a miss reports
 range/line corrections. **Tab** switches between the two stations.
@@ -28,9 +31,9 @@ range/line corrections. **Tab** switches between the two stations.
 See [`firing-solution-design-doc.md`](firing-solution-design-doc.md) for the full
 design and [`Firing Solution - Vision.dc.html`](Firing%20Solution%20-%20Vision.dc.html)
 for the interactive visual study (two station "directions": amber kinetic and
-ice-blue relativistic beam). The **timed beam intercept** relativistic time-of-flight
-puzzle has shipped; the remaining roadmap — headlined by **moving targets** — is tracked
-in [`docs/roadmap.md`](docs/roadmap.md).
+ice-blue relativistic beam). The **timed beam intercept** relativistic time-of-flight puzzle
+and the **moving-target intercept lead** (Medium II) have both shipped; the remaining roadmap
+is tracked in [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Architecture
 
@@ -190,6 +193,14 @@ The fire→score→observe loop is wired, and these instruments are now function
 - **Career score** (`Career.cs`) — persisted to `user://career.save`, updated live.
 - **Beam environment** — now read from the real mission (closing velocity, target
   bearing, LOS-derived altitude, air data, local g) instead of hard-coded values.
+- **Moving targets** (Medium II) — the `Predictability` slider turns the target into a
+  tracker: the kinetic station reads out its observed **track** (speed + heading), the
+  oracle scores the impact against the **lead point** `p(t) = Position + Velocity·t` at the
+  round's true time of flight (`GameEngine.KineticTargetPositionAt`), and the give-up reveal
+  runs a fixed-point intercept solver. So the player must *lead* the mover, by hand.
+- **Shareable mission codes** (`MissionCode.cs`) — since a mission is a pure function of
+  seed + sliders, the station shows a short code (e.g. `FS1-K2963-000011A7`) that reproduces
+  the byte-identical mission for anyone who enters it.
 - **Stated input precision** on every field and observed readout.
 
 Also wired: a **difficulty selector** in the top bar (cycles the four tiers and

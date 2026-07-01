@@ -191,39 +191,49 @@ the wait without ever distorting the physics.*
 
 ---
 
-## Next up
+## Shipped (this build)
 
-### ★ Moving targets — the intercept lead
+### ★ Moving targets — the intercept lead  ✅ SHIPPED (Medium II)
 
-*The headline remaining feature, and the reason the one-clock rule above was made
-non-negotiable.* Every mission today is a static-coordinate puzzle: the target waits while
-the player solves. A moving target turns the loop from *solve this equation* into *solve a
-time-of-flight intercept* — the player must lead a mover, and the lead is only correct if
-the target's position, the projectile's flight time, and the firing clock share one
-consistent time base (which they now do).
+*The headline feature, and the reason the one-clock rule above was made non-negotiable.*
+A static coordinate puzzle asks *solve this equation*; a moving target asks *solve a
+time-of-flight intercept* — the player must lead a mover, and the lead is only correct
+because the target's position, the round's flight time, and the firing clock share one
+consistent time base.
 
-**The shape it takes:**
+**What shipped (Core-first, unit-tested):**
 
-- **Core (the oracle).** `KineticTarget` / `BeamTarget` gain a kinematic state — at minimum
-  a constant velocity, later a parameterised track (linear → orbital) keyed off the
-  `Predictability` slider. The target position becomes `p(t) = p₀ + v·t` evaluated at the
-  shot's true time of flight; `Ballistics` already returns that time of flight, so scoring
-  compares the impact against `p(t_impact)`, not a fixed point.
-- **Generator.** `Predictability` (currently reserved) drives how much of the track is
-  revealed: heading + speed handed over at low obscurity, only noisy past fixes to
-  triangulate from at high obscurity. Determinism (same seed → same track) must hold, so the
-  motion is a pure function of seed + elapsed time.
-- **Scoring.** Add an intercept solver to `RevealKineticSolution` that converges the firing
-  solution and the target's flight-time-dependent position together (fixed-point or a short
-  Newton iteration on time of flight), so "give up" still surfaces a real solution.
-- **Shell.** The board and vertical plane already sample one sim clock; the mover is just one
-  more consumer of it, so the target glyph advances on the same clock as the flyout and
-  fast-forward scales it for free. A pre-fire track readout (last known position + vector)
-  replaces today's static target coordinate.
+- **Core.** `KineticTarget` gains a ground `Velocity`; its position is `p(t) = Position + Velocity·t`.
+  `GameEngine.FireKinetic` scores the impact against `KineticTargetPositionAt(mission, t_flight)`
+  — the lead point at the round's true time of flight — not the launch-instant coordinate.
+  A zero velocity is a stationary target, so every prior mission is byte-identical.
+- **Generator.** The `Predictability` slider (previously reserved) turns the target into a
+  tracker at Medium II; the observed track (speed + heading) is handed over with the usual
+  intel noise floor. Gated on the slider, not the tier, so default missions are unchanged;
+  the mover is pulled nearer the gun so a firing solution always exists.
+- **Scoring.** `RevealKineticSolution` dispatches movers to a fixed-point intercept solver
+  (`SolveToStaticPoint` + lead iteration) that converges the firing solution and the target's
+  flight-time-dependent position together, so "give up" still surfaces a real, landing solution.
+  Covered by `MovingTargetTests` (solvable, deterministic, and the lead genuinely matters).
+- **Shell.** The Medium II kinetic station reads out the observed track and reports the
+  spotter's correction against the true intercept point.
 
-This is a Core-first feature: the kinematics, generator wiring and intercept solver land in
-`FiringSolution.Core` with unit tests (a moving-target mission must still be provably
-solvable), and only then does the shell render the motion.
+**Still ahead for movers:** animating the target glyph along its track during the flyout
+(it already has one sim clock to ride), moving targets at Hard tier, and a parameterised
+(non-linear / orbital) track keyed to higher `Predictability`.
+
+### ⬡ Shareable mission codes  ✅ SHIPPED
+
+Because a mission is a pure function of seed + sliders, `MissionCode.Encode`/`Decode`
+(Core, unit-tested) pack those into a short code like `FS1-K2963-000011A7`. The kinetic
+station shows the current mission's code so a player can share it — *"solve this one"* —
+and anyone who enters the same seed gets the byte-identical mission.
+
+### ⬡ Cross-platform launch  ✅ SHIPPED (`play.sh`)
+
+`play.sh` is the Linux / macOS counterpart to `PLAY.bat`: it force-rebuilds and launches the
+Godot shell (point `GODOT` at the editor, or have it on `PATH`). A Godot **web export** for
+in-browser play is the natural next step.
 
 ## Deferred
 
@@ -234,8 +244,6 @@ solvable), and only then does the shell render the motion.
 - ~~**Timed warhead intercept · long-range battlespace · one physical clock · flight-time
   fast-forward**~~ — **shipped** (see [Shipped expansions](#shipped-expansions)).
 - Campaign, resource economy, upgrade tree, leaderboards.
-- Shareable mission codes (the seed + sliders already fully determine a mission, so a "solve
-  this one" challenge code is nearly free).
-- Cross-platform launch (the `.bat` scripts are Windows-only; a `play.sh` and a Godot web
-  export would open it to Linux / macOS and the browser).
+- Godot **web export** for in-browser play (builds on the new `play.sh` cross-platform launch).
+- Moving-target glyph animation on the board, Hard-tier movers, and non-linear / orbital tracks.
 - The remaining three weapon classes (interceptor, railgun, missile) and more worlds.

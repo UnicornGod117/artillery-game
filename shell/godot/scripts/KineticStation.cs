@@ -39,9 +39,12 @@ public partial class KineticStation : StationView
     {
         if (_seed < 0) _seed = _seedSeq++;
 
-        // Mission is needed for chip text — generate it up front.
+        // Mission is needed for chip text — generate it up front. Predictability turns the
+        // target into a mover the player must LEAD; it's engaged at Medium II, the tier the
+        // design earmarks for the moving-target intercept (steady drag, so the lead is solvable).
         _mission = GameEngine.GenerateMission(new DifficultySliders(
-            WeaponKind.Kinetic, MathFidelity: _tier, Triangulation: 0.3, Circumstance: 0.3, Seed: _seed));
+            WeaponKind.Kinetic, MathFidelity: _tier, Triangulation: 0.3, Circumstance: 0.3,
+            Predictability: _tier == 2 ? 0.6 : 0.0, Seed: _seed));
 
         // Apply the chosen munition (the generator bakes in the default; swapping the
         // weapon only changes the round's ballistics, never the hidden target).
@@ -134,9 +137,19 @@ public partial class KineticStation : StationView
             ("NORTHING · km", $"{tgtAbs.Y / 1000:0.000}"),
         };
         if (_mission.TierIndex >= 1) tgtCells.Add(("ALTITUDE · m", $"{tgtAbs.Z:0.0}"));
-        tgtCells.Add(("MOTION", "STATIC"));
+        bool moving = _mission.KineticTarget!.IsMoving;
+        if (moving)
+        {
+            // The observed track (speed + heading) is intel, not a solution — the player still
+            // has to work the flight time and where the target will be when the round arrives.
+            tgtCells.Add(("TRACK SPD · m/s", $"{o.TargetSpeed:0.0}"));
+            tgtCells.Add(("TRACK HDG · °", $"{o.TargetHeading:0.0}"));
+        }
+        else tgtCells.Add(("MOTION", "STATIC"));
         v.AddChild(MetricGrid(tgtCells.ToArray(), new Color("e9ddc6")));
-        v.AddChild(Ui.Text($"↳ OP-1 at grid E {opAbs.X / 1000:0.000} · N {opAbs.Y / 1000:0.000} km. Range, bearing & drop are yours to solve.", P.Faint, 9));
+        string opNote = $"↳ OP-1 at grid E {opAbs.X / 1000:0.000} · N {opAbs.Y / 1000:0.000} km. Range, bearing & drop are yours to solve.";
+        if (moving) opNote += " Target is MOVING — the coordinate is its last fix; lead it by its track.";
+        v.AddChild(Ui.Text(opNote, P.Faint, 9));
 
         // --- Weapon configuration --- click the munition to cycle the loaded round.
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
@@ -150,6 +163,12 @@ public partial class KineticStation : StationView
             ("SHELL MASS", $"{m.Mass:0.0} kg"),
             ("BALLISTIC COEF", $"{m.DragCoeff:0.000}"),
         }, new Color("cdbf9f"), 13));
+
+        // --- Mission code --- seed + sliders fully determine the mission, so this short code
+        // reproduces the exact same one for anyone who enters its seed. Shareable challenge.
+        v.AddChild(Ui.SectionHeader(P, "Mission Code", P.Accent, "SHARE"));
+        v.AddChild(Ui.Text(MissionCode.Encode(_mission.Sliders), P.Text, 13));
+        v.AddChild(Ui.Text("↳ same code → same mission, for anyone.", P.Faint, 8));
 
         return panel;
     }
@@ -248,7 +267,7 @@ public partial class KineticStation : StationView
         Board.PxPerMeter = (float)(300.0 / coverage);
         Board.TargetRange = tr;
         Board.TargetBearing = _mission.KineticObserved!.Bearing;
-        Board.TargetLabel = "TGT · ARMOR";
+        Board.TargetLabel = _mission.KineticTarget!.IsMoving ? "TGT · MOBILE ARMOR" : "TGT · ARMOR";
         Board.AimAzimuth = _az;
         Board.GunOriginM = new Vector2((float)_mission.GunOrigin.X, (float)_mission.GunOrigin.Y);
         Board.HasSpotter = true;
@@ -330,10 +349,13 @@ public partial class KineticStation : StationView
         // the noisy intel coordinate: that's what lets it walk you off the triangulation
         // error. (Referencing the observed target made a shot laid on the given coordinate
         // read as "0.0° on" yet still miss — the loop could never correct itself.)
-        var trueT = _mission.KineticTarget!;
+        // Reference the target where it ACTUALLY was when the round landed — for a mover that's
+        // the intercept point p(t_flight), not the launch-instant fix — so OP-1's correction
+        // walks the player toward the lead, not toward stale coordinates.
+        Vec3 truePos = GameEngine.KineticTargetPositionAt(_mission, r.Trajectory.Impact.Time);
         Vector2 spot = Polar(_spotRange, _spotBearing);
         Vector2 impact = Polar(r.Trajectory.Impact.Range, r.Trajectory.Impact.Bearing);
-        Vector2 tgt = new((float)trueT.Position.X, (float)trueT.Position.Y);
+        Vector2 tgt = new((float)truePos.X, (float)truePos.Y);
         Vector2 sToImpact = impact - spot;
         Vector2 sToTgt = tgt - spot;
 

@@ -27,9 +27,14 @@ jobs:
       - name: Restore
         run: dotnet restore FiringSolution.sln
 
-      # Warnings-as-errors keeps the "0 warnings" promise honest in CI.
-      - name: Build
-        run: dotnet build FiringSolution.sln --configuration Release --no-restore -warnaserror
+      # The Core is the oracle — hold it to zero warnings so a sloppy edit to the answer
+      # key can't slip through. (Scoped to the Core so third-party test analyzers can't
+      # fail the run on style nits unrelated to correctness.)
+      - name: Build Core (warnings as errors)
+        run: dotnet build src/FiringSolution.Core/FiringSolution.Core.csproj --configuration Release --no-restore -warnaserror
+
+      - name: Build solution
+        run: dotnet build FiringSolution.sln --configuration Release --no-restore
 
       - name: Test
         run: dotnet test FiringSolution.sln --configuration Release --no-build --verbosity normal

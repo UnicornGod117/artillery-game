@@ -13,14 +13,30 @@ public sealed record DifficultySliders(
 
 public enum WeaponKind { Kinetic, Beam }
 
-/// <summary>True kinetic target (the oracle scores against this; never shown raw).</summary>
-public sealed record KineticTarget(Vec3 Position, double Range, double Bearing, double Altitude);
+/// <summary>
+/// True kinetic target (the oracle scores against this; never shown raw). A moving
+/// target carries a steady ground <see cref="Velocity"/> (ENU m/s): its position at the
+/// round's true time of flight is <c>Position + Velocity·t</c>, and that — not the
+/// launch-instant position — is what the impact is scored against, so the player must
+/// LEAD it. A zero velocity is a stationary target and behaves exactly as before.
+/// </summary>
+public sealed record KineticTarget(Vec3 Position, double Range, double Bearing, double Altitude, Vec3 Velocity = default)
+{
+    /// <summary>True if this target tracks (non-zero ground velocity).</summary>
+    public bool IsMoving => Velocity.MagnitudeXY > 1e-9;
+}
 
 /// <summary>Noisy intel actually shown to the player (mild noise floor, §10).</summary>
+/// <remarks>
+/// For a moving target the observed track (<see cref="TargetSpeed"/> m/s and
+/// <see cref="TargetHeading"/> compass degrees) is handed over with the same noise
+/// floor as the position; both are zero for a stationary target.
+/// </remarks>
 public sealed record KineticObserved(
     double Range, double Bearing, double Altitude,
     double WindSpeed, double WindFrom,
-    double AirTemp, double AirDensity, double LocalG);
+    double AirTemp, double AirDensity, double LocalG,
+    double TargetSpeed = 0, double TargetHeading = 0);
 
 /// <summary>
 /// True beam target — a long-range proper-time WARHEAD intercept. The warhead carries a
