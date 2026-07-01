@@ -53,6 +53,19 @@ public static class Ui
         return l;
     }
 
+    /// <summary>
+    /// A word-wrapping label capped to <paramref name="width"/> px. Long note text must wrap
+    /// rather than stretch its container — an unwrapped line forces the whole panel wider,
+    /// which (in the fixed 3-column layout) pushes neighbouring panels off-screen.
+    /// </summary>
+    public static Label WrappedText(string text, Color color, int size, float width)
+    {
+        var l = Text(text, color, size);
+        l.AutowrapMode = TextServer.AutowrapMode.Word;
+        l.CustomMinimumSize = new Vector2(width, 0);
+        return l;
+    }
+
     /// <summary>A bordered panel with interior padding, used for every readout box.</summary>
     public static PanelContainer Panel(Color bg, Color border, int pad = 10, int borderW = 1)
     {

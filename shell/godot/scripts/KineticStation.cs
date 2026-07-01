@@ -149,7 +149,9 @@ public partial class KineticStation : StationView
         v.AddChild(MetricGrid(tgtCells.ToArray(), new Color("e9ddc6")));
         string opNote = $"↳ OP-1 at grid E {opAbs.X / 1000:0.000} · N {opAbs.Y / 1000:0.000} km. Range, bearing & drop are yours to solve.";
         if (moving) opNote += " Target is MOVING — the coordinate is its last fix; lead it by its track.";
-        v.AddChild(Ui.Text(opNote, P.Faint, 9));
+        // Wrap (don't stretch): a long single-line note would widen the whole left panel and
+        // shove the firing-solution panel off-screen at Medium II. Cap to the panel's width.
+        v.AddChild(Ui.WrappedText(opNote, P.Faint, 9, 280));
 
         // --- Weapon configuration --- click the munition to cycle the loaded round.
         v.AddChild(Ui.SectionHeader(P, "Weapon Configuration", P.Accent));
