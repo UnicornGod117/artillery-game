@@ -171,20 +171,25 @@ public static class GameEngine
         var tgt = mission.KineticTarget!;
         Vec3 p0 = tgt.Position, v = tgt.Velocity;
 
+        // Phase 1 — converge the lead CHEAPLY. Each pass estimates only the flight time to the
+        // current aim (fixed bearing, coarse elevation — no azimuth sweep, no refine), then
+        // advances the aim to where the target will be after that flight. A few passes settle
+        // it, and each is a fraction of a full solve, so the reveal stays inexpensive.
         Vec3 aim = p0;
-        (double az, double el, int charge)? cand = null;
-        for (int iter = 0; iter < 12; iter++)
+        for (int iter = 0; iter < 8; iter++)
         {
-            var probe = SolveToStaticPoint(mission, aim);
-            if (probe is null) return null;               // even at max charge, unreachable
-            var (az, el, charge, tof) = probe.Value;
-            cand = (az, el, charge);
-            Vec3 next = p0 + v * tof;
-            bool converged = (next - aim).MagnitudeXY < 1.0;
+            double? tof = CoarseTofToPoint(mission, aim);
+            if (tof is null) return null;                 // even at max charge, unreachable
+            Vec3 next = p0 + v * tof.Value;
+            bool converged = (next - aim).MagnitudeXY < 2.0;
             aim = next;
             if (converged) break;
         }
-        if (cand is not { } c) return null;
+
+        // Phase 2 — one full, refined solve at the converged lead point.
+        var probe = SolveToStaticPoint(mission, aim);
+        if (probe is null) return null;
+        var c = probe.Value;
 
         // Verify against the real mover; refine locally if the lead is a hair off.
         if (FireKinetic(mission, c.az, c.el, c.charge).Score.Hit)
@@ -194,6 +199,36 @@ public static class GameEngine
                 if (FireKinetic(mission, az, el, c.charge).Score.Hit)
                     return new KineticReveal(az, el, c.charge);
         return null;
+    }
+
+    /// <summary>
+    /// Cheap lead-iteration probe: the shortest flight time of any shot (fired along the aim's
+    /// bearing, coarse elevation grid) that lands within splash of <paramref name="aim"/>, or
+    /// null if no charge reaches. No azimuth sweep and no refine — flight time is governed by
+    /// range, so this is plenty to converge the lead before the single full solve.
+    /// </summary>
+    private static double? CoarseTofToPoint(Mission mission, Vec3 aim)
+    {
+        double range = aim.MagnitudeXY, bearing = aim.Bearing;
+        int maxCharge = mission.KineticWeapon!.MaxCharge;
+        double splash = mission.Splash;
+
+        double bestTof = double.MaxValue;
+        bool found = false;
+        for (int charge = 1; charge <= maxCharge; charge++)
+        {
+            if (FireKinetic(mission, bearing, 38, charge).Trajectory.Impact.Range < range * 0.98) continue;
+            for (double el = 5; el <= 85; el += 2.0)
+            {
+                var traj = FireKinetic(mission, bearing, el, charge).Trajectory;
+                if (Scoring.ScoreKinetic(traj.Impact, aim, splash).Miss <= splash && traj.Impact.Time < bestTof)
+                {
+                    bestTof = traj.Impact.Time;
+                    found = true;
+                }
+            }
+        }
+        return found ? bestTof : null;
     }
 
     /// <summary>
