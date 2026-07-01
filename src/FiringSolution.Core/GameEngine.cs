@@ -202,30 +202,29 @@ public static class GameEngine
     }
 
     /// <summary>
-    /// Cheap lead-iteration probe: the shortest flight time of any shot (fired along the aim's
-    /// bearing, coarse elevation grid) that lands within splash of <paramref name="aim"/>, or
-    /// null if no charge reaches. No azimuth sweep and no refine — flight time is governed by
-    /// range, so this is plenty to converge the lead before the single full solve.
+    /// Cheap lead-iteration probe: the flight time of the shot (fired along the aim's bearing,
+    /// coarse elevation grid) whose ground RANGE best matches the aim's range, or null if no
+    /// charge reaches. It's judged on range error — not total miss — because at the drag tiers
+    /// a crosswind pushes an on-bearing shot sideways past the splash radius, so a miss-based
+    /// test would spuriously find nothing; the flight time is governed by range regardless, and
+    /// that's all this needs to converge the lead. The azimuth (wind) and precision are the full
+    /// solve's job. Preferring the flattest reaching arc keeps the lead small and reachable.
     /// </summary>
     private static double? CoarseTofToPoint(Mission mission, Vec3 aim)
     {
         double range = aim.MagnitudeXY, bearing = aim.Bearing;
         int maxCharge = mission.KineticWeapon!.MaxCharge;
-        double splash = mission.Splash;
 
-        double bestTof = double.MaxValue;
+        double bestErr = double.MaxValue, bestTof = 0;
         bool found = false;
         for (int charge = 1; charge <= maxCharge; charge++)
         {
             if (FireKinetic(mission, bearing, 38, charge).Trajectory.Impact.Range < range * 0.98) continue;
             for (double el = 5; el <= 85; el += 2.0)
             {
-                var traj = FireKinetic(mission, bearing, el, charge).Trajectory;
-                if (Scoring.ScoreKinetic(traj.Impact, aim, splash).Miss <= splash && traj.Impact.Time < bestTof)
-                {
-                    bestTof = traj.Impact.Time;
-                    found = true;
-                }
+                var impact = FireKinetic(mission, bearing, el, charge).Trajectory.Impact;
+                double err = Math.Abs(impact.Range - range);
+                if (err < bestErr) { bestErr = err; bestTof = impact.Time; found = true; }
             }
         }
         return found ? bestTof : null;
