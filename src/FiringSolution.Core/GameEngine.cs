@@ -35,8 +35,26 @@ public static class GameEngine
             throw new InvalidOperationException("Mission is not a kinetic mission.");
 
         var traj = Ballistics.SimulateKinetic(mission.KineticWeapon, mission.Environment, solution, mission.Flags);
-        var score = Scoring.ScoreKinetic(traj.Impact, mission.KineticTarget.Position, mission.Splash);
+        // Score against where the target IS when the round arrives, not where it launched.
+        // For a stationary target this is its fixed position (unchanged behaviour); for a
+        // mover it's the lead point p(t) at the true time of flight, so a hit demands lead.
+        Vec3 aimPoint = KineticTargetPositionAt(mission, traj.Impact.Time);
+        var score = Scoring.ScoreKinetic(traj.Impact, aimPoint, mission.Splash);
         return new KineticResult(traj, score);
+    }
+
+    /// <summary>
+    /// The kinetic target's ENU position (gun-relative) <paramref name="t"/> seconds after
+    /// the shot is fired: <c>p(t) = Position + Velocity·t</c>. Stationary targets (zero
+    /// velocity) return their fixed position, so nothing changes for them. The shell renders
+    /// the moving glyph from this, and scoring evaluates it at the round's true time of flight.
+    /// </summary>
+    public static Vec3 KineticTargetPositionAt(Mission mission, double t)
+    {
+        if (mission.KineticTarget is null)
+            throw new InvalidOperationException("Mission is not a kinetic mission.");
+        var tgt = mission.KineticTarget;
+        return tgt.Position + tgt.Velocity * t;
     }
 
     /// <summary>Convenience: resolve a discrete charge to muzzle velocity, then fire.</summary>
@@ -97,6 +115,10 @@ public static class GameEngine
             mission.KineticWeapon is null || mission.Environment is null || mission.KineticTarget is null)
             throw new InvalidOperationException("Mission is not a kinetic mission.");
 
+        // A moving target needs an intercept lead, not a fixed-point solve — hand it off.
+        if (mission.KineticTarget.IsMoving)
+            return RevealMovingSolution(mission);
+
         double bearing = mission.KineticTarget.Bearing;
         double targetRange = mission.KineticTarget.Range;
         int maxCharge = mission.KineticWeapon.MaxCharge;
@@ -133,6 +155,43 @@ public static class GameEngine
             // samples in a steep-derivative region.
             if (any && RefineAround(charge, bestEl, bestAz) is { } hit) return hit;
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Intercept solver for a MOVING target (the "give up" reveal for a tracker). Because
+    /// <see cref="FireKinetic"/> already scores every shot against the target's position at
+    /// that shot's true time of flight, a hit IS a valid intercept — so this reuses the
+    /// stationary reveal's proven coarse-to-fine search, only widened in azimuth to cover the
+    /// lead cone and with no range-based prune (the intercept range isn't known up front). A
+    /// short-flight (low-arc) intercept carries only a small lead, so it always sits well
+    /// inside the ±LeadCone search. Returns null only if no intercept exists in the envelope.
+    /// </summary>
+    private static KineticReveal? RevealMovingSolution(Mission mission)
+    {
+        const double LeadCone = 22.0;   // deg either side of the current bearing — covers the lead
+        double bearing = mission.KineticTarget!.Bearing;
+        int maxCharge = mission.KineticWeapon!.MaxCharge;
+
+        double bestMiss = double.MaxValue, bestEl = 45, bestAz = bearing;
+        int bestCharge = 1;
+        bool any = false;
+        for (int charge = 1; charge <= maxCharge; charge++)
+            for (double el = 5; el <= 85; el += 2.0)
+                for (double az = bearing - LeadCone; az <= bearing + LeadCone; az += 1.0)
+                {
+                    var r = FireKinetic(mission, az, el, charge);   // scored against the MOVER
+                    if (r.Score.Hit) return new KineticReveal(az, el, charge);
+                    if (r.Score.Miss < bestMiss) { bestMiss = r.Score.Miss; bestEl = el; bestAz = az; bestCharge = charge; any = true; }
+                }
+
+        // The coarse grid can step over the splash window where dR/dθ is steep, so refine the
+        // best basin to ~0.05° before giving up (exactly as the stationary reveal does).
+        if (any)
+            for (double el = Math.Max(1, bestEl - 2.5); el <= Math.Min(89, bestEl + 2.5); el += 0.05)
+                for (double az = bestAz - 2.5; az <= bestAz + 2.5; az += 0.15)
+                    if (FireKinetic(mission, az, el, bestCharge).Score.Hit)
+                        return new KineticReveal(az, el, bestCharge);
         return null;
     }
 }

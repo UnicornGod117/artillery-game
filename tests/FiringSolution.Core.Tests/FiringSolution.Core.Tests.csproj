@@ -17,4 +17,12 @@
     <ProjectReference Include="..\..\src\FiringSolution.Core\FiringSolution.Core.csproj" />
   </ItemGroup>
 
+  <!-- The shell's Calculator is pure C# with no Godot dependency (it deliberately
+       holds no physics), so it can be compiled and unit-tested headlessly here
+       without pulling in Godot.NET.Sdk or a display. Linked, not copied, so the
+       test exercises the exact source the shell ships. -->
+  <ItemGroup>
+    <Compile Include="..\..\shell\godot\scripts\Calculator.cs" Link="Shell\Calculator.cs" />
+  </ItemGroup>
+
 </Project>

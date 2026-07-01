@@ -1,0 +1,66 @@
+name: CI
+
+# The Core is the answer key: every score in the game is measured against the
+# trajectory it integrates, so a silent regression here corrupts the game
+# invisibly. This workflow builds the Core + tests and runs the unit suite on
+# every push and pull request, making "Verified under the .NET 8 SDK" a fact the
+# repository proves rather than a claim in the README.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same ref supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & test (Core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore FiringSolution.sln
+
+      # The Core is the oracle — hold it to zero warnings so a sloppy edit to the answer
+      # key can't slip through. (Scoped to the Core so third-party test analyzers can't
+      # fail the run on style nits unrelated to correctness.)
+      - name: Build Core (warnings as errors)
+        run: dotnet build src/FiringSolution.Core/FiringSolution.Core.csproj --configuration Release --no-restore -warnaserror
+
+      - name: Build solution
+        run: dotnet build FiringSolution.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test FiringSolution.sln --configuration Release --no-build --verbosity normal
+
+  build-shell:
+    name: Build shell (Godot .NET, compile-only)
+    runs-on: ubuntu-latest
+    # The Godot shell can't render headless in CI, but Godot.NET.Sdk is a NuGet package, so
+    # `dotnet build` compiles the C# against the GodotSharp API and the Core without the
+    # editor. This catches any shell code that references the Core incorrectly — the one
+    # surface the Core test suite can't reach.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore shell
+        run: dotnet restore shell/godot/FiringSolution.Shell.csproj
+
+      - name: Build shell
+        run: dotnet build shell/godot/FiringSolution.Shell.csproj --configuration Debug --no-restore

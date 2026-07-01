@@ -40,6 +40,15 @@ public static class MissionGenerator
         var weapon = Munitions.KineticArtillery();
         double siteAltitude = tierIdx >= 1 ? Math.Round(rng.Lerp(0, 1600)) : 0;
 
+        // Moving target: the Predictability slider (design §6) turns the target into a
+        // tracker the player must LEAD. It's gated ON the slider — not the tier — so every
+        // mission generated without it (all default missions) stays byte-identical, and the
+        // slider reads naturally: 0 = fully predictable (stationary), >0 = a live track.
+        // Requires a drag tier (Medium II+) where the intercept lead is the intended puzzle.
+        // NOTE: this flag is derived from the sliders alone (no RNG), so when it is false the
+        // RNG stream below is exactly what it was before movers existed.
+        bool moving = s.Predictability > 0 && tierIdx >= 2;
+
         // Drag-free tiers (Easy / Medium I) can reach right out to ~40 km, so let the
         // target sit anywhere in that radius. At the drag tiers (Medium II / Hard) the
         // round is drag-limited, so the reachable envelope stays nearer the gun.
@@ -48,12 +57,32 @@ public static class MissionGenerator
         double bearing = Math.Round(rng.Lerp(0, 360) * 10) / 10;
         double tAlt = tierIdx >= 1 ? Math.Round(rng.Lerp(-120, 260)) : 0;
 
+        // A mover is pulled nearer the gun so its full lead (range + speed·flight-time) stays
+        // inside the reachable envelope, guaranteeing a firing solution exists (asserted by
+        // MovingTargetTests). The clamp doesn't consume RNG, so the stream stays aligned.
+        if (moving) range = Math.Min(range, 7000);
+
+        // Ground track (ENU): a steady horizontal velocity. Speed grows with Predictability
+        // so a more "obscure" track also demands a larger, harder lead. Drawn only when
+        // moving, so a stationary mission never touches the RNG here.
+        double tgtSpeed = 0, tgtHeading = 0;
+        Vec3 targetVel = Vec3.Zero;
+        if (moving)
+        {
+            tgtSpeed = Math.Round(rng.Lerp(8, 12 + 26 * s.Predictability) * 10) / 10; // m/s
+            tgtHeading = Math.Round(rng.Lerp(0, 360) * 10) / 10;                       // compass deg
+            targetVel = new Vec3(
+                tgtSpeed * Math.Sin(Constants.DegToRad(tgtHeading)),
+                tgtSpeed * Math.Cos(Constants.DegToRad(tgtHeading)),
+                0);
+        }
+
         var target = new KineticTarget(
             new Vec3(
                 range * Math.Sin(Constants.DegToRad(bearing)),
                 range * Math.Cos(Constants.DegToRad(bearing)),
                 tAlt),
-            range, bearing, tAlt);
+            range, bearing, tAlt, targetVel);
 
         double windSpeed = flags.Wind ? Math.Round(rng.Lerp(4, 16) * 10) / 10 : 0;
         double windFrom = Math.Round(rng.Lerp(0, 360));
@@ -65,6 +94,14 @@ public static class MissionGenerator
         double rho = Atmosphere.DensityAt(world, siteAltitude);
 
         double triNoise = s.Triangulation * 0.02;
+        // Observed track carries the same triangulation noise floor as the position intel
+        // (drawn only for a mover, so a stationary mission's RNG stream is unchanged).
+        double obsSpeed = 0, obsHeading = 0;
+        if (moving)
+        {
+            obsSpeed = Math.Round(rng.Noisy(tgtSpeed, triNoise) * 10) / 10;
+            obsHeading = Math.Round(rng.Noisy(tgtHeading, triNoise * 0.5) * 10) / 10;
+        }
         var observed = new KineticObserved(
             Range: Math.Round(rng.Noisy(range, triNoise)),
             Bearing: Math.Round(rng.Noisy(bearing, triNoise * 0.5) * 10) / 10,
@@ -73,7 +110,9 @@ public static class MissionGenerator
             WindFrom: windFrom,
             AirTemp: Math.Round(rng.Lerp(-10, 25) * 10) / 10,
             AirDensity: Math.Round(rho * 1000) / 1000,
-            LocalG: Math.Round(localG * 1000) / 1000);
+            LocalG: Math.Round(localG * 1000) / 1000,
+            TargetSpeed: obsSpeed,
+            TargetHeading: obsHeading);
 
         // Place the gun somewhere on a battlespace grid (NOT at the origin). Drawn last so
         // the deterministic sequence above is untouched. Offsetting by ≥ maxRange keeps the

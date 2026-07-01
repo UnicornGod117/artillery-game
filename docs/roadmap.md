@@ -27,13 +27,23 @@ MEDIUM I, since the design forbids a trivial beam mission. The remaining sliders
 
 ---
 
-## Planned expansions
+## Shipped expansions
 
-### ★ Timed warhead intercept — a proper-time (time-dilation) puzzle
+> The four items below were once planned; they are now **in the game**. The physics
+> derivations are kept here as the reference for what the code does. What remains genuinely
+> ahead is in [Next up](#next-up) and [Deferred](#deferred) further down — headlined by
+> **moving targets**.
+
+### ★ Timed warhead intercept — a proper-time (time-dilation) puzzle  ✅ SHIPPED
 
 *Proposed by the player. The beam's signature problem is energy/γ, not lead — this
 turns relativity itself into the win condition by making **the warhead's own clock**
 matter.*
+
+**Status.** Shipped. `BeamTarget` carries `FuseProperTime` and a detonation tolerance;
+`Relativistic.DetonationDistance` / `SpeedForFuseRange` and `Scoring.ScoreBeam` implement
+the `d = βγcτ` gate and the `β = k/√(1+k²)` inversion (`GameEngine.RevealBeamBeta`), covered
+by `ScoringTests.Beam_RequiresPointingAndDetonationRange`.
 
 **Fantasy.** You fire a warhead with a fixed-duration fuse: it detonates after a set
 amount of time **on its own onboard clock** — a *proper time* `τ_fuse` measured in the
@@ -97,7 +107,11 @@ scoring with the dilation gate; the shell's flyout becomes flight-time-driven.
 
 ---
 
-### ★ Long-range relativistic battlespace (beam / particle station)
+### ★ Long-range relativistic battlespace (beam / particle station)  ✅ SHIPPED
+
+**Status.** Shipped. `MissionGenerator.GenerateBeam` derives the slant range from `R = βγcτ`
+at β ≈ 0.85–0.98, so beam engagements now run at light-second scale; the emitter sits on a
+matching battlespace grid and the board spans it.
 
 The relativistic particle station's battlespace **grows by orders of magnitude** — from
 today's tens-of-km tactical box to long-range / orbital distances (thousands to millions
@@ -115,7 +129,12 @@ of km, ultimately light-seconds). This is a prerequisite, not a flourish:
 - This is what makes accurate **simulation time** possible on the beam station at all, and
   it's the same move that unlocks the timed-warhead intercept above.
 
-### ‼ Cross-cutting principle: one physical clock (real, scaled time)
+### ‼ Cross-cutting principle: one physical clock (real, scaled time)  ✅ SHIPPED
+
+**Status.** Shipped for the shot's flyout. `StationView` owns one sim clock advanced by
+`delta × _playRate`; the plotting board and vertical plane are pure functions of it, driven
+over the round's real flight time (`StationView.BeginFlyout`). Target motion is the one
+consumer of this clock not yet wired — see [Next up](#next-up).
 
 *This is now a hard architectural rule, not a nice-to-have — it is the foundation moving
 targets stand on, and the reason the battlespace scale-up above matters.*
@@ -140,7 +159,11 @@ real elapsed time multiplied by a single global *sim-seconds-per-real-second* sc
   target kinematics are pure functions of `t`. The flight-time-driven flyout required by
   the timed-intercept section is just the first instance of this rule.
 
-### ⏩ Flight-time fast-forward (playback acceleration)
+### ⏩ Flight-time fast-forward (playback acceleration)  ✅ SHIPPED
+
+**Status.** Shipped. `StationView` exposes a `1× → 1.5× → 2× → 4× → 10× → 15×` speed control
+(top-bar button) that multiplies the single sim-clock rate and nothing else, so the whole
+flyout scales uniformly and the oracle's outcome is untouched.
 
 *A direct corollary of the one-clock rule above — and only safe **because** of it. With
 real flight times that can run to minutes at orbital range, the player must be able to skip
@@ -168,11 +191,59 @@ the wait without ever distorting the physics.*
 
 ---
 
-## Deferred (from design §12 and this build)
+## Shipped (this build)
+
+### ★ Moving targets — the intercept lead  ✅ SHIPPED (Medium II)
+
+*The headline feature, and the reason the one-clock rule above was made non-negotiable.*
+A static coordinate puzzle asks *solve this equation*; a moving target asks *solve a
+time-of-flight intercept* — the player must lead a mover, and the lead is only correct
+because the target's position, the round's flight time, and the firing clock share one
+consistent time base.
+
+**What shipped (Core-first, unit-tested):**
+
+- **Core.** `KineticTarget` gains a ground `Velocity`; its position is `p(t) = Position + Velocity·t`.
+  `GameEngine.FireKinetic` scores the impact against `KineticTargetPositionAt(mission, t_flight)`
+  — the lead point at the round's true time of flight — not the launch-instant coordinate.
+  A zero velocity is a stationary target, so every prior mission is byte-identical.
+- **Generator.** The `Predictability` slider (previously reserved) turns the target into a
+  tracker at Medium II; the observed track (speed + heading) is handed over with the usual
+  intel noise floor. Gated on the slider, not the tier, so default missions are unchanged;
+  the mover is pulled nearer the gun so a firing solution always exists.
+- **Scoring.** `RevealKineticSolution` dispatches movers to a fixed-point intercept solver
+  (`SolveToStaticPoint` + lead iteration) that converges the firing solution and the target's
+  flight-time-dependent position together, so "give up" still surfaces a real, landing solution.
+  Covered by `MovingTargetTests` (solvable, deterministic, and the lead genuinely matters).
+- **Shell.** The Medium II kinetic station reads out the observed track and reports the
+  spotter's correction against the true intercept point.
+
+**Still ahead for movers:** animating the target glyph along its track during the flyout
+(it already has one sim clock to ride), moving targets at Hard tier, and a parameterised
+(non-linear / orbital) track keyed to higher `Predictability`.
+
+### ⬡ Shareable mission codes  ✅ SHIPPED
+
+Because a mission is a pure function of seed + sliders, `MissionCode.Encode`/`Decode`
+(Core, unit-tested) pack those into a short code like `FS1-K2963-000011A7`. The kinetic
+station shows the current mission's code so a player can share it — *"solve this one"* —
+and anyone who enters the same seed gets the byte-identical mission.
+
+### ⬡ Cross-platform launch  ✅ SHIPPED (`play.sh`)
+
+`play.sh` is the Linux / macOS counterpart to `PLAY.bat`: it force-rebuilds and launches the
+Godot shell (point `GODOT` at the editor, or have it on `PATH`). A Godot **web export** for
+in-browser play is the natural next step.
+
+## Deferred
+
+*From design §12 and this build.*
 
 - ~~**Difficulty-selector UI** in the shell~~ — **shipped** (top-bar tier selector).
-- **Moving targets** — wires up the Predictability slider and delivers Medium II's
-  intended moving-target intercept lead.
 - ~~**Reload / cooldown throttle**~~ — **shipped** (the reload bar locks the fire button).
+- ~~**Timed warhead intercept · long-range battlespace · one physical clock · flight-time
+  fast-forward**~~ — **shipped** (see [Shipped expansions](#shipped-expansions)).
 - Campaign, resource economy, upgrade tree, leaderboards.
+- Godot **web export** for in-browser play (builds on the new `play.sh` cross-platform launch).
+- Moving-target glyph animation on the board, Hard-tier movers, and non-linear / orbital tracks.
 - The remaining three weapon classes (interceptor, railgun, missile) and more worlds.
